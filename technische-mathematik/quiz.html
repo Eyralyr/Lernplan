@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Technische Mathematik · Quiz</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --text:#1d2430; --muted:#5d6878; --line:#d9dee6;
+    --accent:#1f6feb; --accent-soft:#e6f0ff; --ok:#1a7f37; --ok-bg:#e3f6e8; --bad:#c62828; --bad-bg:#fdeaea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12161c; --card:#1b212a; --text:#e8ecf2; --muted:#9aa5b5; --line:#2e3744;
+      --accent:#5aa2ff; --accent-soft:#1d2d46; --ok:#4cc26a; --ok-bg:#16301f; --bad:#ff7b72; --bad-bg:#3a1c1c;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:17px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:680px;margin:0 auto;padding:20px 16px 60px}
+  h1{font-size:1.4rem;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 4px}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+  .meta{display:flex;justify-content:space-between;color:var(--muted);font-size:.9rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px}
+  .tag{display:inline-block;font-size:.8rem;background:var(--accent-soft);color:var(--accent);padding:2px 10px;border-radius:99px;margin-bottom:10px}
+  .q{font-size:1.1rem;font-weight:600;margin:0 0 14px}
+  .opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--text);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;font:inherit;cursor:pointer}
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .opt.ok{border-color:var(--ok);background:var(--ok-bg)}
+  .opt.bad{border-color:var(--bad);background:var(--bad-bg)}
+  .opt:disabled{cursor:default}
+  .num{display:flex;gap:10px;align-items:center}
+  .num input{flex:1;font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);min-width:0}
+  .num input:focus{outline:none;border-color:var(--accent)}
+  .num span{color:var(--muted);white-space:nowrap}
+  .btn{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px 18px;background:var(--accent);color:#fff;cursor:pointer;margin-top:14px}
+  .btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+  .btn:disabled{opacity:.45;cursor:default}
+  .fb{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:.98rem}
+  .fb.ok{background:var(--ok-bg);border:1px solid var(--ok)}
+  .fb.bad{background:var(--bad-bg);border:1px solid var(--bad)}
+  .fb b{display:block;margin-bottom:4px}
+  .fb code{background:rgba(127,127,127,.18);padding:1px 6px;border-radius:5px}
+  .score{font-size:2.4rem;font-weight:700;margin:6px 0}
+  ul.weak{padding-left:20px}
+  .hint{color:var(--muted);font-size:.9rem;margin-top:10px}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+  <p class="sub"><a href="../index.html">← Zur Übersicht</a></p>
+  <h1>Technische Mathematik</h1>
+  <p class="sub">Wiederholungs-Quiz · 12 Aufgaben · Taschenrechner bereithalten</p>
+
+  <div id="quiz">
+    <div class="meta"><span id="count"></span><span id="topic"></span></div>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="card" id="card"></div>
+  </div>
+</main>
+
+<script>
+// Aufgaben. type "mc" = Auswahl, type "num" = Zahleneingabe (tol = erlaubte Abweichung)
+const ALL = [
+  {t:"Kreis und Umfang", type:"num", q:"Ein Rohr hat einen Außendurchmesser von 114,3 mm. Wie lang ist der Umfang?", unit:"mm", ans:359.1, tol:0.5,
+   sol:"U = π · d = 3,1416 · 114,3 mm ≈ <code>359,1 mm</code>. Das ist auch die Länge, die ein Wickelband oder eine Schablone um das Rohr braucht."},
+  {t:"Bogen und Zuschnitt", type:"num", q:"Ein 90°-Bogen hat einen Mittellinienradius von 150 mm. Wie lang ist die gestreckte Länge der Mittellinie?", unit:"mm", ans:235.6, tol:0.7,
+   sol:"Ein 90°-Bogen ist ein Viertelkreis: l = π · R / 2 = 3,1416 · 150 / 2 ≈ <code>235,6 mm</code>."},
+  {t:"Volumen", type:"num", q:"Ein Rohrstück hat einen Innendurchmesser von 100 mm und ist 2 m lang. Wie viel Liter passen hinein?", unit:"Liter", ans:15.7, tol:0.2,
+   sol:"V = π/4 · d² · l = 0,7854 · (0,1 m)² · 2 m ≈ 0,0157 m³. Mit 1 m³ = 1000 l ergibt das <code>15,7 Liter</code>. Wichtig: alles zuerst in Meter umrechnen."},
+  {t:"Dreisatz", type:"num", q:"5 m eines Rohres wiegen 32,5 kg. Wie viel wiegen 8 m desselben Rohres?", unit:"kg", ans:52, tol:0.05,
+   sol:"5 m → 32,5 kg, also 1 m → 6,5 kg, und 8 m → 8 · 6,5 = <code>52 kg</code>."},
+  {t:"Druck", type:"num", q:"Auf eine Fläche von 50 cm² wirkt eine Kraft von 2000 N. Welcher Druck entsteht?", unit:"bar", ans:4, tol:0.02,
+   sol:"p = F / A. 50 cm² = 0,005 m², also p = 2000 N / 0,005 m² = 400 000 Pa = <code>4 bar</code> (1 bar = 100 000 Pa)."},
+  {t:"Gefälle", type:"num", q:"Eine Abwasserleitung soll auf 12 m Länge ein Gefälle von 2 % bekommen. Wie groß ist der Höhenunterschied?", unit:"mm", ans:240, tol:1,
+   sol:"2 % heißt 2 cm je 1 m. Auf 12 m sind das 12 · 2 cm = 24 cm = <code>240 mm</code>."},
+  {t:"Wärmeausdehnung", type:"num", q:"Eine Stahlleitung ist 20 m lang und wird um 60 K wärmer. Stahl dehnt sich um 0,012 mm je Meter und Kelvin aus. Um wie viel wird die Leitung länger?", unit:"mm", ans:14.4, tol:0.1,
+   sol:"Δl = α · l · ΔT = 0,012 mm/(m·K) · 20 m · 60 K = <code>14,4 mm</code>. Deshalb braucht man Dehnungsbögen oder Kompensatoren."},
+  {t:"Prozentrechnung", type:"num", q:"Rohrmaterial kostet netto 240 €. Wie hoch ist der Preis mit 19 % Mehrwertsteuer?", unit:"€", ans:285.6, tol:0.01,
+   sol:"240 € · 1,19 = <code>285,60 €</code>. Die Mehrwertsteuer allein sind 240 € · 0,19 = 45,60 €."},
+  {t:"Pythagoras", type:"num", q:"Eine Rohrleitung muss einen Versatz überbrücken: 600 mm waagerecht und 800 mm senkrecht. Wie lang ist das schräge Zwischenstück (Mitte bis Mitte)?", unit:"mm", ans:1000, tol:1,
+   sol:"c = √(a² + b²) = √(600² + 800²) = √1 000 000 = <code>1000 mm</code>."},
+  {t:"Durchfluss", type:"num", q:"Ein Rohr mit 50 mm Innendurchmesser wird mit 2 m/s durchströmt. Wie groß ist der Volumenstrom?", unit:"l/s", ans:3.93, tol:0.1,
+   sol:"A = π/4 · d² = 0,7854 · (0,05 m)² ≈ 0,001963 m². Q = A · v = 0,001963 m² · 2 m/s ≈ 0,003927 m³/s = <code>3,93 l/s</code>."},
+  {t:"Einheiten", type:"mc", q:"Wie viel Pascal sind 1 bar?", opts:["10 Pa","1 000 Pa","100 000 Pa","1 000 000 Pa"], ans:2,
+   sol:"1 bar = 100 000 Pa = 10⁵ Pa. Zur Kontrolle: 1 bar entspricht etwa dem Luftdruck auf Meereshöhe."},
+  {t:"Einheiten", type:"mc", q:"Welche Formel gilt für den Druck?", opts:["p = F · A","p = F / A","p = A / F","p = F + A"], ans:1,
+   sol:"Druck ist Kraft pro Fläche: <code>p = F / A</code>. Merkhilfe: Gleiche Kraft auf kleinere Fläche heißt höherer Druck."}
+];
+
+let list = [], idx = 0, answers = [], checked = false;
+const $ = id => document.getElementById(id);
+const fmt = n => String(n).replace(".", ",");
+
+function start(items){
+  list = items.slice(); idx = 0; answers = []; checked = false; render();
+}
+
+function render(){
+  if(idx >= list.length) return finish();
+  const it = list[idx]; checked = false;
+  $("count").textContent = "Aufgabe " + (idx+1) + " von " + list.length;
+  $("topic").textContent = "";
+  $("prog").style.width = (idx/list.length*100) + "%";
+  let html = '<span class="tag">' + it.t + '</span><p class="q">' + it.q + '</p>';
+  if(it.type === "mc"){
+    html += it.opts.map((o,i)=>'<button class="opt" data-i="'+i+'">'+o+'</button>').join("");
+  } else {
+    html += '<div class="num"><input id="inp" inputmode="decimal" autocomplete="off" placeholder="Ergebnis eingeben"><span>'+it.unit+'</span></div>'
+          + '<p class="hint">Komma oder Punkt sind beide erlaubt. Auf zwei Stellen runden reicht.</p>';
+  }
+  html += '<button class="btn" id="check" disabled>Prüfen</button><div id="fb"></div>';
+  $("card").innerHTML = html;
+
+  let sel = null;
+  if(it.type === "mc"){
+    document.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+      if(checked) return;
+      document.querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));
+      b.classList.add("sel"); sel = +b.dataset.i; $("check").disabled = false;
+    });
+  } else {
+    const inp = $("inp");
+    inp.oninput = () => { $("check").disabled = inp.value.trim() === ""; };
+    inp.onkeydown = e => { if(e.key === "Enter" && !$("check").disabled) $("check").click(); };
+    inp.focus();
+  }
+  $("check").onclick = () => checked ? next() : check(it, sel);
+}
+
+function check(it, sel){
+  let ok;
+  if(it.type === "mc"){
+    ok = sel === it.ans;
+    document.querySelectorAll(".opt").forEach((b,i)=>{
+      b.disabled = true;
+      if(i === it.ans) b.classList.add("ok");
+      else if(i === sel) b.classList.add("bad");
+    });
+  } else {
+    const v = parseFloat($("inp").value.replace(/\s/g,"").replace(",","."));
+    ok = !isNaN(v) && Math.abs(v - it.ans) <= it.tol;
+    $("inp").disabled = true;
+  }
+  answers.push({it, ok});
+  checked = true;
+  const head = ok ? "✅ Richtig" : "❌ Nicht ganz" + (it.type==="num" ? " (richtig: " + fmt(it.ans) + " " + it.unit + ")" : "");
+  $("fb").innerHTML = '<div class="fb ' + (ok?"ok":"bad") + '"><b>' + head + '</b>' + it.sol + '</div>';
+  $("check").textContent = idx === list.length-1 ? "Auswertung" : "Weiter";
+}
+
+function next(){ idx++; render(); }
+
+function finish(){
+  $("prog").style.width = "100%";
+  $("count").textContent = "Fertig";
+  const right = answers.filter(a=>a.ok).length, total = answers.length;
+  const wrong = answers.filter(a=>!a.ok).map(a=>a.it);
+  let prev = "";
+  try{
+    const old = localStorage.getItem("kai-mathe-best");
+    if(old !== null) prev = '<p class="hint">Dein bisheriger Bestwert: ' + old + ' von ' + total + '.</p>';
+    if(old === null || right > +old) localStorage.setItem("kai-mathe-best", right);
+  }catch(e){}
+  const verdict = right === total ? "Alles richtig. Stark!" : right >= total*0.75 ? "Gut. Nur noch ein paar Lücken." : right >= total*0.5 ? "Geht so. Die Themen unten nochmal anschauen." : "Hier lohnt sich eine zweite Runde.";
+  let html = '<h2 style="margin:0">Auswertung</h2><div class="score">' + right + ' von ' + total + '</div><p>' + verdict + '</p>' + prev;
+  if(wrong.length){
+    html += '<p><b>Das solltest du wiederholen</b> (🔴 oder 🟡 in deiner Notion-Tabelle eintragen):</p><ul class="weak">'
+          + [...new Set(wrong.map(w=>w.t))].map(t=>'<li>'+t+'</li>').join("") + '</ul>'
+          + '<button class="btn" id="again-wrong">Nur die falschen nochmal</button> ';
+  }
+  html += '<button class="btn ghost" id="again-all">Alles nochmal</button>';
+  $("card").innerHTML = html;
+  if(wrong.length) $("again-wrong").onclick = () => start(wrong);
+  $("again-all").onclick = () => start(shuffle(ALL));
+}
+
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+start(shuffle(ALL));
+</script>
+</body>
+</html>
