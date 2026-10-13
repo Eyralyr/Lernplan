@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isometrie-Trainer</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main>
+  <p class="sub"><a href="../index.html">← Zur Übersicht</a></p>
+  <h1>Isometrie-Trainer</h1>
+  <p class="sub">Eine Rohrleitung in der isometrischen Einliniendarstellung zeichnen. Du brauchst Papier und einen Stift. Die Regeln findest du weiter unten.</p>
+
+  <div class="card" style="margin-top:0">
+    <h2>Aufgabe</h2>
+    <p id="task" class="q"></p>
+    <p class="hint" id="startnote">Fang mit dem Achsenkreuz an, dann zeichne Stück für Stück. Die Längen müssen nicht maßstäblich sein, aber die Richtungen müssen stimmen. Wenn du magst: 1 m = 1 cm.</p>
+    <button class="btn" id="show">Lösung anzeigen</button>
+    <button class="btn ghost" id="new">Neue Aufgabe</button>
+    <div id="sol" style="margin-top:14px"></div>
+    <div id="check" style="display:none">
+      <div class="given" style="margin-top:12px">
+        <b>Vergleich mit deiner Zeichnung</b>
+        <ul>
+          <li>Stimmt bei jedem Stück die Richtung?</li>
+          <li>Hat jeder Bogen einen Knick und zwei Schweißpunkte (einen auf jeder Seite)?</li>
+          <li>Sind Anfang und Ende als Flanschverbindung mit zwei Querstrichen gezeichnet, mit einem Schweißpunkt dahinter?</li>
+          <li>Haben die Längen ungefähr das richtige Verhältnis?</li>
+        </ul>
+      </div>
+      <button class="btn" id="had">Hatte ich</button>
+      <button class="btn ghost" id="again">Nochmal üben</button>
+    </div>
+    <p class="hint" id="stat"></p>
+  </div>
+
+  <div class="card">
+    <h2>Achsenbelegung</h2>
+    <p>So zeichnen die sechs Richtungen. Wähle die Variante, die ihr in der Berufsschule benutzt. Die Aufgabentexte bleiben gleich, nur das Bild ändert sich.</p>
+    <p><button class="chip on" id="vA">Variante A</button> <button class="chip" id="vB">Variante B</button></p>
+    <div id="axes" style="max-width:380px;margin:6px auto 0"></div>
+    <p class="hint">Die Norm DIN ISO 6412-2 legt nur die drei Achsen fest (Z senkrecht, X und Y je 30° über der Waagerechten). Welche Richtung „hinten“, „vorn“, „links“ und „rechts“ heißt, steht dort nicht. In der Prüfung zeichnest du zuerst das Achsenkreuz und beschriftest es kurz. Dann ist deine Zeichnung eindeutig.</p>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Die Regeln in 6 Punkten</summary>
+      <ol>
+        <li><b>Drei Achsen:</b> Z geht senkrecht nach oben. X und Y liegen jeweils 30° über der Waagerechten. Zwischen allen Achsen sind 120°.</li>
+        <li><b>Linien:</b> Rohrstücke werden parallel zu den Achsen gezeichnet, nur als eine Linie (die Mittellinie).</li>
+        <li><b>Bögen:</b> als Knick, dort wo sich die Mittellinien treffen.</li>
+        <li><b>Schweißnähte:</b> als ausgefüllter Punkt. An jedem Bogen zwei (einer auf jeder Seite), an jedem Vorschweißflansch einer direkt hinter dem Flanschstrich.</li>
+        <li><b>Flansche:</b> als Querstrich senkrecht zur Rohrlinie. Eine Flanschverbindung (zwei Flansche aufeinander) hat zwei Striche, ein einzelner Flansch am offenen Rohrende einen.</li>
+        <li><b>Maße:</b> In unseren Aufgaben stehen keine Maße in der Zeichnung. In Fertigungszeichnungen nach der Norm werden Längen von Mittellinie zu Mittellinie bemaßt.</li>
+      </ol>
+      <div class="legend" id="legend" style="margin-top:12px"></div>
+      <div class="warn"><b>Alle Flansche in diesen Aufgaben sind Vorschweißflansche</b>, also gehört hinter jeden Flanschstrich ein Schweißpunkt.</div>
+    </details>
+  </div>
+  <p class="hint">Grundlage: DIN ISO 6412-2 (Vereinfachte Darstellung von Rohrleitungen, isometrische Darstellung). Die Aufgaben sind frei erfunden.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const C = Math.cos(Math.PI / 6), S = Math.sin(Math.PI / 6);
+let variant = "A", route = null, solved = false;
+
+// Bildschirmrichtungen (y nach unten). Z oben; Variante A: rechts = nach rechts oben, hinten = nach links oben.
+const VEC = {
+  A: { oben: [0, -1], unten: [0, 1], rechts: [C, -S], links: [-C, S], hinten: [-C, -S], vorn: [C, S] },
+  B: { oben: [0, -1], unten: [0, 1], rechts: [C, S], links: [-C, -S], hinten: [C, -S], vorn: [-C, S] },
+};
+const WORD = { oben: "nach oben", unten: "nach unten", rechts: "nach rechts", links: "nach links", hinten: "nach hinten", vorn: "nach vorn" };
+const AXDIRS = { z: ["oben", "unten"], x: ["rechts", "links"], y: ["hinten", "vorn"] };
+const D3 = { oben: [0, 0, 1], unten: [0, 0, -1], rechts: [1, 0, 0], links: [-1, 0, 0], hinten: [0, 1, 0], vorn: [0, -1, 0] };
+
+function makeRoute() {
+  for (let tries = 0; tries < 200; tries++) {
+    const n = pick([3, 4, 4, 5]);
+    const segs = []; let prevAx = null;
+    for (let i = 0; i < n; i++) {
+      let ax; do { ax = pick(["x", "y", "z"]); } while (ax === prevAx);
+      segs.push({ d: pick(AXDIRS[ax]), len: pick([1, 2, 2, 3, 3, 4, 5, 6]) });
+      prevAx = ax;
+    }
+    // keine Rückkehr zu einem früheren Punkt, damit sich nichts überlagert
+    let p = [0, 0, 0]; const seen = new Set(["0,0,0"]); let ok = true;
+    for (const g of segs) {
+      const v = D3[g.d];
+      for (let k = 1; k <= g.len; k++) {
+        const q = [p[0] + v[0] * k, p[1] + v[1] * k, p[2] + v[2] * k].join(",");
+        if (seen.has(q)) ok = false; seen.add(q);
+      }
+      p = [p[0] + v[0] * g.len, p[1] + v[1] * g.len, p[2] + v[2] * g.len];
+    }
+    if (ok) return segs;
+  }
+  return [{ d: "oben", len: 2 }, { d: "hinten", len: 4 }, { d: "rechts", len: 3 }];
+}
+
+function describe(segs) {
+  const first = segs[0], rest = segs.slice(1);
+  return "Eine Rohrleitung beginnt am Flansch des Behälterstutzens. Sie verläuft " + first.len + " m " + WORD[first.d] + ". " +
+    rest.map(s => "Danach folgt mit einem 90°-Schweißbogen ein Stück von " + s.len + " m " + WORD[s.d] + ".").join(" ") +
+    " Am Ende sitzt ein Flansch zum Anschluss einer Pumpe. Zeichne die Leitung in Einliniendarstellung mit Bögen, Flanschverbindungen und Schweißnähten.";
+}
+
+function routeSVG(segs) {
+  const s = 38, v = VEC[variant];
+  const p = [[0, 0]]; let x = 0, y = 0;
+  segs.forEach(g => { x += v[g.d][0] * g.len * s; y += v[g.d][1] * g.len * s; p.push([x, y]); });
+  const xs = p.map(a => a[0]), ys = p.map(a => a[1]);
+  const minx = Math.min(...xs) - 110, maxx = Math.max(...xs) + 40, miny = Math.min(...ys) - 40, maxy = Math.max(...ys) + 40;
+  let out = '<path class="ln" d="M' + p.map(a => a[0].toFixed(1) + " " + a[1].toFixed(1)).join(" L") + '"/>';
+  const unit = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy); return [dx / l, dy / l]; };
+  const at = (a, u, d) => [a[0] + u[0] * d, a[1] + u[1] * d];
+  const strokeAt = (pt, u) => { const n = [-u[1], u[0]]; return '<line class="fl" x1="' + (pt[0] + n[0] * 11) + '" y1="' + (pt[1] + n[1] * 11) + '" x2="' + (pt[0] - n[0] * 11) + '" y2="' + (pt[1] - n[1] * 11) + '"/>'; };
+  const dot = pt => '<circle class="dot" cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="4.5"/>';
+  const u0 = unit(p[0], p[1]);
+  out += strokeAt(p[0], u0) + strokeAt(at(p[0], u0, 6), u0) + dot(at(p[0], u0, 20));
+  const m = p.length - 1, uE = unit(p[m], p[m - 1]);
+  out += strokeAt(p[m], uE) + strokeAt(at(p[m], uE, 6), uE) + dot(at(p[m], uE, 20));
+  for (let i = 1; i < m; i++) {
+    out += dot(at(p[i], unit(p[i], p[i - 1]), 12)) + dot(at(p[i], unit(p[i], p[i + 1]), 12));
+  }
+  // kleines Achsenkreuz unten links
+  const ox = minx + 52, oy = maxy - 24, L = 28;
+  const arrow = (d, t) => '<line class="ax" x1="' + ox + '" y1="' + oy + '" x2="' + (ox + v[d][0] * L) + '" y2="' + (oy + v[d][1] * L) + '"/><text x="' + (ox + v[d][0] * (L + 10) - 4) + '" y="' + (oy + v[d][1] * (L + 10) + 4) + '">' + t + "</text>";
+  out += arrow("oben", "Z") + arrow("rechts", "X") + arrow("hinten", "Y");
+  const w = maxx - minx, h = maxy - miny;
+  return '<svg class="iso" viewBox="' + minx.toFixed(0) + " " + miny.toFixed(0) + " " + w.toFixed(0) + " " + h.toFixed(0) + '" role="img" aria-label="Lösung der Isometrie-Aufgabe">' + out + "</svg>";
+}
+
+function sixArrows() {
+  const v = VEC[variant], ox = 190, oy = 120, L = 78;
+  let out = "";
+  Object.keys(WORD).forEach(d => {
+    const e = v[d], tx = ox + e[0] * (L + 8), ty = oy + e[1] * (L + 8) + 4;
+    const anchor = e[0] > 0.1 ? "start" : e[0] < -0.1 ? "end" : "middle";
+    out += '<line class="ax" x1="' + ox + '" y1="' + oy + '" x2="' + (ox + e[0] * L) + '" y2="' + (oy + e[1] * L) + '"/>' +
+      '<circle cx="' + (ox + e[0] * L) + '" cy="' + (oy + e[1] * L) + '" r="3" fill="currentColor" style="color:var(--muted)"/>' +
+      '<text text-anchor="' + anchor + '" x="' + tx + '" y="' + (d === "oben" ? ty - 6 : d === "unten" ? ty + 8 : ty) + '">' + d + "</text>";
+  });
+  $("axes").innerHTML = '<svg class="iso" viewBox="0 0 380 240" role="img" aria-label="Die sechs Richtungen">' + out + "</svg>";
+  $("vA").classList.toggle("on", variant === "A"); $("vB").classList.toggle("on", variant === "B");
+}
+
+function newTask() {
+  route = makeRoute(); solved = false;
+  $("task").textContent = describe(route);
+  $("sol").innerHTML = ""; $("check").style.display = "none"; $("show").style.display = "";
+  window.scrollTo(0, 0);
+}
+
+function statText() {
+  try {
+    const st = JSON.parse(localStorage.getItem("kai-iso") || "null");
+    $("stat").textContent = st ? "Bisher: " + st.had + " von " + st.total + " Aufgaben ohne Fehler gezeichnet." : "";
+  } catch (e) {}
+}
+function note(had) {
+  try {
+    const st = JSON.parse(localStorage.getItem("kai-iso") || '{"had":0,"total":0}');
+    st.total++; if (had) st.had++;
+    localStorage.setItem("kai-iso", JSON.stringify(st));
+  } catch (e) {}
+  statText();
+}
+
+$("show").onclick = () => { $("sol").innerHTML = routeSVG(route); $("check").style.display = ""; $("show").style.display = "none"; };
+$("new").onclick = newTask;
+$("had").onclick = () => { note(true); newTask(); };
+$("again").onclick = () => { note(false); newTask(); };
+$("vA").onclick = () => { variant = "A"; sixArrows(); if ($("sol").innerHTML) $("sol").innerHTML = routeSVG(route); };
+$("vB").onclick = () => { variant = "B"; sixArrows(); if ($("sol").innerHTML) $("sol").innerHTML = routeSVG(route); };
+
+function sym(kind) {
+  const base = '<path class="ln" d="M10 40 L70 10"/>';
+  const f = (x, y) => '<line class="fl" x1="' + x + '" y1="' + y + '" x2="' + (x + 9) + '" y2="' + (y + 15) + '"/>';
+  if (kind === "bogen") return '<svg class="iso" viewBox="0 0 80 50"><path class="ln" d="M10 40 L40 25 L40 8"/></svg>';
+  if (kind === "naht") return '<svg class="iso" viewBox="0 0 80 50">' + base + '<circle class="dot" cx="40" cy="25" r="4.5"/></svg>';
+  if (kind === "baust") return '<svg class="iso" viewBox="0 0 80 50">' + base + '<circle class="dot" cx="40" cy="25" r="4.5"/><path class="ln" d="M40 25 L40 8 L54 12 L40 16" style="stroke-width:1.8"/></svg>';
+  if (kind === "flansch") return '<svg class="iso" viewBox="0 0 80 50">' + base + f(33, 20) + f(42, 16) + "</svg>";
+  if (kind === "ende") return '<svg class="iso" viewBox="0 0 80 50">' + base + f(62, 7) + "</svg>";
+  if (kind === "kreuz") return '<svg class="iso" viewBox="0 0 80 50"><path class="ln" d="M10 40 L33 28 M47 21 L70 10"/><path class="ln" d="M15 12 L65 40"/></svg>';
+}
+$("legend").innerHTML = [
+  ["bogen", "Bogen = Knick"], ["naht", "Schweißnaht = Punkt"], ["baust", "Schweißnaht auf der Baustelle = Punkt mit Fähnchen"],
+  ["flansch", "Flanschverbindung = zwei Querstriche"], ["ende", "Einzelner Flansch am Rohrende = ein Querstrich"], ["kreuz", "Kreuzung: das verdeckte Rohr wird unterbrochen"],
+].map(a => "<div>" + sym(a[0]) + a[1] + "</div>").join("");
+
+sixArrows(); statText(); newTask();
+</script>
+</body>
+</html>

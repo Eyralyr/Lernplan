@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teil B Freitext</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  table{border-collapse:collapse;width:100%;font-size:.92rem;margin:8px 0}
+  th,td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+  th{background:var(--accent-soft)}
+  .key{background:var(--ok-bg);border:1px solid var(--ok);border-radius:10px;padding:10px 14px;margin-top:12px}
+  .key ul,.key ol{margin:6px 0 0;padding-left:20px}
+</style>
+</head>
+<body>
+<main>
+  <p class="sub"><a href="../index.html">← Zur Übersicht</a></p>
+  <h1>Teil B: Selbst antworten</h1>
+  <p class="sub">In Teil B schreibst und zeichnest du selbst. Hier läuft es so: Aufgabe lesen, auf Papier antworten (Stichworte reichen), dann die Musterlösung aufklappen und ehrlich vergleichen.</p>
+
+  <div class="meta"><span id="count"></span><span id="stat"></span></div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="card" id="card"></div>
+  <p class="hint">Die Aufgaben sind selbst formuliert und orientieren sich an den Themen der Prüfung. Bei Rechnungen gilt: Formel, Einsetzen, Ergebnis, Einheit.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+const SVG_SCHWEISS = '<svg class="iso" viewBox="0 0 320 130" role="img" aria-label="Schweißnahtsymbol: Pfeillinie, Bezugslinie, Nahtsymbol, Gabel mit Kennzahl" style="max-width:340px;max-height:none">' +
+  '<line class="ax" style="stroke:var(--text)" x1="20" y1="110" x2="95" y2="60"/><path d="M20 110 L33 106 L27 96 z" fill="currentColor" style="color:var(--text)"/>' +
+  '<line class="ax" style="stroke:var(--text)" x1="95" y1="60" x2="240" y2="60"/>' +
+  '<line class="ax" style="stroke:var(--text)" stroke-dasharray="6 4" x1="95" y1="68" x2="240" y2="68"/>' +
+  '<path class="ln" d="M150 60 L160 46 L170 60" style="stroke-width:2"/>' +
+  '<path class="ln" d="M240 60 L262 46 M240 60 L262 74" style="stroke-width:2"/>' +
+  '<text x="268" y="64" style="fill:var(--text);font-size:15px">141</text>' +
+  '<text x="20" y="24" style="font-size:12px">Pfeillinie</text><text x="130" y="30" style="font-size:12px">Nahtsymbol (hier V)</text><text x="125" y="95" style="font-size:12px">Bezugslinie (Voll- und Strichlinie)</text><text x="228" y="105" style="font-size:12px">Gabel mit Kennzahl</text>' +
+  '</svg>';
+
+const ITEMS = [
+  { t: "Pumpen", q: "Nenne zu jeder Pumpe die Bauart (Strömungs- oder Verdrängerpumpe) und das Wirkprinzip: (a) Kreiselpumpe, (b) Membranpumpe, (c) Zahnradpumpe, (d) Kolbenpumpe.",
+    key: ["<b>Kreiselpumpe:</b> Strömungspumpe. Ein Laufrad beschleunigt das Medium, im Gehäuse wird die Geschwindigkeit in Druck gewandelt.", "<b>Membranpumpe:</b> Verdrängerpumpe (oszillierend). Eine Membran vergrößert und verkleinert die Pumpkammer, Ventile geben die Richtung vor.", "<b>Zahnradpumpe:</b> Verdrängerpumpe (rotierend). Die Zähne transportieren das Medium in den Zahnlücken am Gehäuse entlang.", "<b>Kolbenpumpe:</b> Verdrängerpumpe (oszillierend). Ein Kolben saugt und drückt im Wechsel, Ventile steuern den Fluss."] },
+  { t: "Pumpen", q: "Beschreibe die Arbeitsschritte zum erstmaligen Anfahren einer Kreiselpumpe in der richtigen Reihenfolge.", ordered: true,
+    key: ["Pumpe und Anschlüsse auf Sichtschäden und festen Sitz prüfen.", "Saugseitige Armatur ganz öffnen.", "Pumpe und Saugleitung füllen und entlüften (kein Trockenlauf).", "Drehrichtung prüfen (Motor kurz antippen, Pfeil am Gehäuse).", "Druckseitige Armatur schließen oder nur leicht öffnen.", "Pumpe einschalten.", "Druckseitige Armatur langsam bis zum Betriebspunkt öffnen.", "Auf Geräusche, Dichtheit, Druck und Stromaufnahme achten."] },
+  { t: "Pumpen", q: "Zu jeder Störungsursache an einer Pumpe: Welcher Fehler tritt auf, und wie beseitigt man ihn? (a) Flanschschrauben lose, (b) Filter zugesetzt, (c) zu viel Luft im Medium, (d) Flanschdichtung beschädigt, (e) Drehzahl zu hoch.",
+    key: ["<table><tr><th>Ursache</th><th>Fehler</th><th>Beseitigung</th></tr><tr><td>Schrauben lose</td><td>Leckage, Luft wird eingesaugt</td><td>Über Kreuz mit Drehmoment nachziehen</td></tr><tr><td>Filter zugesetzt</td><td>Fördermenge zu gering, Kavitation</td><td>Filter reinigen oder tauschen</td></tr><tr><td>Luft im Medium</td><td>Unruhiger Lauf, Förderstrom schwankt</td><td>Entlüften, undichte Stelle auf der Saugseite suchen</td></tr><tr><td>Dichtung beschädigt</td><td>Leckage am Flansch</td><td>Dichtung erneuern</td></tr><tr><td>Drehzahl zu hoch</td><td>Motor überlastet, Kavitation, Verschleiß</td><td>Drehzahl am Frequenzumrichter oder Getriebe anpassen</td></tr></table>"] },
+  { t: "Zeichnen", q: "Zeichne das Schweißsymbol (Nahtsymbol, Pfeil- und Bezugslinie, Gabel mit Kennzahl) für eine V-Naht, die mit dem WIG-Verfahren geschweißt wird.",
+    key: ["Bestandteile: Pfeillinie zeigt auf die Naht. Bezugslinie ist waagerecht (Volllinie plus Strichlinie). Das Nahtsymbol (V für V-Naht) steht an der Bezugslinie. Am Ende der Bezugslinie sitzt die Gabel mit der Kennzahl des Verfahrens: <b>141</b> für WIG.", SVG_SCHWEISS, "Auf welcher Seite der Linie das Symbol steht, legt fest, ob die Naht auf der Pfeilseite oder der Gegenseite liegt. Das Schweißsymbolsystem A steht im Tabellenbuch."] },
+  { t: "Zeichnen", q: "Eine rechteckige Mann-/Handloch-Dichtung hat die Innenmaße 400 mm × 300 mm, ist 20 mm breit und 6 mm dick. Skizziere sie mit Bemaßung. Welche Außenmaße hat sie?",
+    key: ["Außenmaß = Innenmaß + 2 · Breite (die Breite kommt auf beiden Seiten dazu):", "Länge: 400 mm + 2 · 20 mm = <b>440 mm</b>", "Breite: 300 mm + 2 · 20 mm = <b>340 mm</b>", "Skizze: zwei Rechtecke ineinander (Innen 400 × 300, Außen 440 × 340), Ringbreite 20 mm bemaßt. Dicke 6 mm in einer Seitenansicht oder mit Hinweis „Dicke 6“ angeben. Häufiger Fehler: nur 20 mm statt 2 · 20 mm addieren."] },
+  { t: "Zeichnen", q: "Im Fließschema sind Pumpe, Rückflussverhinderer, Filter und Behälter ohne Pfeile gezeichnet. Wie findest du die Strömungsrichtung?",
+    key: ["Quelle suchen: Meist beginnt das Medium am Behälter oder an einem Zulauf.", "Pumpe: Sie saugt auf der Saugseite an und drückt auf der Druckseite weiter. Die Richtung von der Saug- zur Druckseite gilt.", "Rückflussverhinderer: Er lässt das Medium nur in eine Richtung durch (Pfeilsymbol im Ventil beachten).", "Gase steigen auf, Flüssigkeiten laufen zum tiefsten Punkt.", "Kreisläufe schließen sich: Was aus dem Behälter fließt, kommt über eine andere Leitung zurück.", "Zum Schluss prüfen: Gibt es eine Stelle, an der zwei Pfeile gegeneinander zeigen? Dann stimmt etwas nicht."] },
+  { t: "Schweißen", q: "Nenne zu fünf Verfahren die Prozessnummer: E-Hand, MIG, MAG, WIG, Unterpulver. Und: Welche davon haben eine abschmelzende Elektrode?",
+    key: ["E-Hand = <b>111</b>, MIG = <b>131</b>, MAG = <b>135</b>, WIG = <b>141</b>, Unterpulver = <b>12</b>.", "Abschmelzende Elektrode: E-Hand (Stabelektrode), MIG und MAG (Drahtelektrode), Unterpulver (Drahtelektrode unter Pulver). Nur WIG hat eine nicht abschmelzende Wolframelektrode.", "Eselsbrücke: 1-1-1 E-Hand, 1-3-1 MIG, 1-3-5 MAG, 1-4-1 WIG (4 = Wolfram)."] },
+  { t: "Sicherheit", q: "Gib zu jedem Sicherheitszeichen Bedeutung, Signalfarbe und Kontrastfarbe an: (a) Rauchverbot, (b) Gehörschutz tragen, (c) Warnung vor explosionsfähiger Atmosphäre, (d) Augenspüleinrichtung, (e) Feuerlöscher.",
+    key: ["<table><tr><th></th><th>Bedeutung</th><th>Signalfarbe</th><th>Kontrastfarbe</th></tr><tr><td>(a)</td><td>Verbot</td><td>Rot</td><td>Weiß</td></tr><tr><td>(b)</td><td>Gebot</td><td>Blau</td><td>Weiß</td></tr><tr><td>(c)</td><td>Warnung</td><td>Gelb</td><td>Schwarz</td></tr><tr><td>(d)</td><td>Rettung / Erste Hilfe</td><td>Grün</td><td>Weiß</td></tr><tr><td>(e)</td><td>Brandschutz</td><td>Rot</td><td>Weiß</td></tr></table>", "Form: Verbot und Gebot rund, Warnung dreieckig, Rettung und Brandschutz eckig."] },
+  { t: "Sicherheit", q: "Beschreibe die fünf W-Fragen eines vollständigen Notrufs.",
+    key: ["<b>Wo</b> ist der Unfall passiert (Ort, Gebäude, Zugang)?", "<b>Was</b> ist passiert?", "<b>Wie viele</b> Personen sind verletzt oder betroffen?", "<b>Welche</b> Art von Verletzungen liegt vor?", "<b>Warten</b> auf Rückfragen. Das Gespräch beendet die Leitstelle."] },
+  { t: "Sicherheit", q: "Welche Gefahrenpiktogramme (GHS) sind bei Kalilauge zu erwarten? Gib Code und Bedeutung an. Wie verhältst du dich beim Umgang?",
+    key: ["<b>GHS05</b> (Ätzwirkung): verursacht schwere Verätzungen an Haut und Augen, kann Metalle angreifen.", "<b>GHS07</b> (Ausrufezeichen): reizt, gesundheitsschädlich.", "Verhalten: Schutzbrille, Handschuhe und Schutzkleidung tragen, Sicherheitsdatenblatt beachten, Augenspüleinrichtung kennen, bei Hautkontakt sofort mit viel Wasser spülen, Laugen nie in Aluminiumbehälter füllen."] },
+  { t: "Sicherheit", q: "Nenne vier Schritte einer Gefährdungsbeurteilung in der richtigen Reihenfolge.",
+    key: ["Arbeitsbereich und Tätigkeiten festlegen.", "Gefährdungen ermitteln.", "Gefährdungen beurteilen (wie wahrscheinlich, wie schwer?).", "Maßnahmen festlegen nach dem STOP-Prinzip (Substitution, Technik, Organisation, Person) und umsetzen.", "Wirksamkeit prüfen.", "Ergebnis dokumentieren und bei Änderungen fortschreiben."] },
+  { t: "Sicherheit", q: "Nenne je zwei Beispiele für Hebezeuge, Lastaufnahmemittel und Anschlagmittel.",
+    key: ["<b>Hebezeuge:</b> Brückenkran, Kettenzug, Hallenkran, Flaschenzug.", "<b>Lastaufnahmemittel:</b> Traverse, Vakuumheber, Lastmagnet, Zange.", "<b>Anschlagmittel:</b> Rundschlinge, Hebeband, Kette, Drahtseil.", "Merksatz: Anschlagmittel verbinden die Last mit dem Haken. Der Neigungswinkel der Stränge darf höchstens 60° betragen."] },
+  { t: "Fertigung", q: "Ein Edelstahlbehälter hat nach dem Schweißen Anlauffarben. Begründe, warum man beizt, und beschreibe den Ablauf.",
+    key: ["<b>Begründung:</b> Anlauffarben sind Oxidschichten. Darunter fehlt Chrom, die Passivschicht ist geschwächt, der Stahl kann dort korrodieren.", "<b>Ablauf:</b> Fläche reinigen und entfetten. Beizpaste oder Beizbad auftragen (Schutzbrille, Handschuhe, Schutzkleidung). Einwirkzeit laut Hersteller. Gründlich mit Wasser abspülen. Rückstände sachgerecht entsorgen. Trocknen, an der Luft bildet sich die Passivschicht neu."] },
+  { t: "Fertigung", q: "Innere Unregelmäßigkeiten an Schweißnähten: Nenne drei. Beschreibe außerdem zwei Unterschiede zwischen Durchstrahlungs- und Ultraschallprüfung.",
+    key: ["Innere Unregelmäßigkeiten: Poren, Schlackeneinschlüsse, Bindefehler, innere Risse.", "<b>Durchstrahlung (RT):</b> Röntgen- oder Gammastrahlen, Ergebnis ist ein Bild (Film oder Detektor), Strahlenschutz nötig, Zugang von beiden Seiten.", "<b>Ultraschall (UT):</b> Schallwellen, Fehler reflektieren den Schall (Echo), kein Strahlenschutz, nur eine Seite nötig, Kopplungsmittel erforderlich, Tiefe des Fehlers bestimmbar."] },
+  { t: "Fertigung", q: "Beschreibe den Ablauf einer hydraulischen Druckprobe an einer Leitung.",
+    key: ["Leitung mit Blindflanschen verschließen, Prüfmanometer anbringen.", "Mit Wasser füllen und sorgfältig entlüften.", "Druck langsam bis zum Prüfdruck steigern.", "Prüfdruck für die vorgeschriebene Zeit halten, Druck beobachten.", "Naht, Flansche und Dichtungen auf Leckage prüfen.", "Druck langsam ablassen, entleeren, Ergebnis dokumentieren."] },
+  { t: "Rechnen", q: "Wie schreibst du in Teil B einen Rechenweg auf, damit du die volle Punktzahl bekommst?",
+    key: ["<b>1. Formel</b> hinschreiben (z. B. p = F : A).", "<b>2. Ansatz:</b> Zahlen mit Einheiten einsetzen.", "<b>3. Ergebnis</b> ausrechnen.", "<b>4. Einheit</b> dazuschreiben, ohne Einheit gibt es Abzug.", "Außerdem: Verwendete Tabellenbücher oben auf dem Heft eintragen. Zwischenergebnisse nicht zu früh runden."] },
+];
+
+let list = [], idx = 0, had = 0, done = 0;
+function start() { list = shuffle(ITEMS); idx = 0; had = 0; done = 0; render(); }
+
+function render() {
+  if (idx >= list.length) return finish();
+  window.scrollTo(0, 0);
+  const it = list[idx];
+  $("count").textContent = "Aufgabe " + (idx + 1) + " von " + list.length;
+  $("stat").textContent = done ? had + " von " + done + " gut" : "";
+  $("prog").style.width = (idx / list.length * 100) + "%";
+  $("card").innerHTML = '<span class="tag">' + it.t + '</span><p class="q">' + it.q + '</p>' +
+    '<p class="hint">Schreib deine Antwort auf Papier, Stichworte genügen. Erst danach die Musterlösung öffnen.</p>' +
+    '<button class="btn" id="reveal">Musterlösung anzeigen</button>' +
+    '<button class="btn ghost" id="skip">Überspringen</button><div id="sol"></div>';
+  $("skip").onclick = () => { idx++; render(); };
+  $("reveal").onclick = () => {
+    const body = it.ordered ? "<ol>" + it.key.map(k => "<li>" + k + "</li>").join("") + "</ol>" : it.key.map(k => k.startsWith("<table") || k.startsWith("<svg") ? k : "<p style=\"margin:6px 0\">" + k + "</p>").join("");
+    $("sol").innerHTML = '<div class="key"><b>Musterlösung (Stichworte)</b>' + body + '</div><p class="hint">Wie gut war deine Antwort?</p>' +
+      '<button class="btn" id="good">Das meiste hatte ich</button><button class="btn ghost" id="bad">Nochmal anschauen</button>';
+    $("reveal").style.display = "none"; $("skip").style.display = "none";
+    $("good").onclick = () => { had++; done++; idx++; render(); };
+    $("bad").onclick = () => { done++; list.push(it); idx++; render(); };
+  };
+}
+
+function finish() {
+  $("prog").style.width = "100%"; $("count").textContent = "Fertig";
+  $("card").innerHTML = '<h2 style="margin:0">Geschafft</h2><div class="score">' + had + ' von ' + done + '</div><p>So viele Aufgaben hast du dir gut gemerkt. Was nicht saß, schaust du in ein paar Tagen nochmal an.</p><button class="btn" id="again">Nochmal von vorn</button>';
+  $("again").onclick = start;
+}
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rechen-Trainer</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main>
+  <p class="sub"><a href="../index.html">← Zur Übersicht</a></p>
+  <h1>Rechen-Trainer</h1>
+  <p class="sub">Rechenaufgaben für Teil B (der Teil mit Rechnen, Zeichnen und eigenen Antworten). Die Zahlen ändern sich bei jeder Runde.</p>
+
+  <div class="card" style="margin-top:0">
+    <label for="sel"><b>Aufgabenart:</b></label>
+    <select id="sel" style="font:inherit;padding:8px;border-radius:8px;border:1.5px solid var(--line);background:var(--card);color:var(--text);max-width:100%"></select>
+    <p class="hint" id="stat">Noch nichts gerechnet.</p>
+  </div>
+
+  <div class="card" id="card"></div>
+  <p class="hint">Alle Zahlen sind erfunden. In der Prüfung schreibst du den Rechenweg komplett hin: Formel, Einsetzen, Ergebnis, Einheit.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const rnd = (a, b, st = 1) => a + st * Math.floor(Math.random() * ((b - a) / st + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const fmt = (x, d = 2) => Number(x).toLocaleString("de-DE", { maximumFractionDigits: d, useGrouping: false });
+const PI = Math.PI;
+
+// Jede Aufgabenart liefert: q (Aufgabentext), given (Liste), ask (Gesucht), unit, ans, tol, tip (Formel), steps (Lösungsweg)
+const KINDS = [
+  { id: "fuellgrad", name: "Füllgrad eines Behälters", gen() {
+    const VN = pick([800, 1000, 1500, 1800, 2500, 3000]);
+    const VF = Math.round(VN * rnd(55, 92) / 100 / 10) * 10;
+    const ans = VF / VN * 100;
+    return { q: "Ein Behälter wird nicht ganz voll gefüllt.", given: ["Nennvolumen V<sub>N</sub> = " + fmt(VN) + " L", "Füllvolumen V<sub>F</sub> = " + fmt(VF) + " L"],
+      ask: "Wie groß ist der Füllgrad F in Prozent?", unit: "%", ans, tolAbs: 0.2,
+      tip: "Füllgrad = Füllvolumen : Nennvolumen · 100 %",
+      steps: ["F = V<sub>F</sub> : V<sub>N</sub> · 100 %", "F = " + fmt(VF) + " L : " + fmt(VN) + " L · 100 % = <code>" + fmt(ans, 1) + " %</code>"] };
+  } },
+  { id: "masse", name: "Gesamtmasse eines gefüllten Behälters", gen() {
+    const m = rnd(300, 700, 5), V = rnd(500, 2000, 50), rho = 0.998;
+    const mw = rho * V, ans = m + mw;
+    return { q: "Ein leerer Behälter wird mit vollentsalztem Wasser gefüllt.", given: ["Masse leer m<sub>leer</sub> = " + m + " kg", "Füllmenge V = " + fmt(V) + " L (1 L = 1 dm³)", "Dichte VE-Wasser ρ = 0,998 kg/dm³ (VE-Wasser = vollentsalztes Wasser)"],
+      ask: "Wie groß ist die Gesamtmasse des gefüllten Behälters?", unit: "kg", ans, tolAbs: 1,
+      tip: "m<sub>Wasser</sub> = ρ · V, danach m<sub>gesamt</sub> = m<sub>leer</sub> + m<sub>Wasser</sub>",
+      steps: ["m<sub>Wasser</sub> = ρ · V = 0,998 kg/dm³ · " + fmt(V) + " dm³ = " + fmt(mw, 1) + " kg", "m<sub>gesamt</sub> = " + m + " kg + " + fmt(mw, 1) + " kg = <code>" + fmt(ans, 1) + " kg</code>"] };
+  } },
+  { id: "kuehl", name: "Kühlleistung (Wärmestrom)", gen() {
+    const mdot = rnd(800, 2400, 100), dT = rnd(5, 15), c = rnd(85, 98) / 100;
+    const ans = mdot * c * dT / 1000;
+    return { q: "Eine Kalilauge (Elektrolyt) wird in einem Wärmetauscher gekühlt. Sie strömt mit gleichbleibender Menge durch.", given: ["Massenstrom (Menge pro Stunde) ṁ = " + fmt(mdot) + " kg/h", "Spezifische Wärmekapazität c = " + fmt(c) + " Wh/(kg · K) (Wh = Wattstunde)", "Abkühlung um ΔT = " + dT + " K"],
+      ask: "Wie groß ist die abzuführende Kühlleistung in kW?", unit: "kW", ans, tolRel: 0.015,
+      tip: "Q̇ = ṁ · c · ΔT. Die Einheiten kürzen sich: kg/h · Wh/(kg · K) · K = Wh/h = W. Das Ergebnis ist in Watt, für kW teilst du durch 1000.",
+      steps: ["Q̇ = ṁ · c · ΔT", "Q̇ = " + fmt(mdot) + " kg/h · " + fmt(c) + " Wh/(kg · K) · " + dT + " K = " + fmt(ans * 1000, 0) + " W", "<code>" + fmt(ans) + " kW</code> (1 kW = 1000 W)"] };
+  } },
+  { id: "waerme", name: "Wärmemenge beim Schweißen (MJ)", gen() {
+    const A = rnd(2, 5), s = rnd(4, 10), dT = rnd(150, 300, 10), rho = 7.9, c = 0.5;
+    const V = A * s / 1000, m = V * 1000 * rho, Q = m * c * dT / 1000;
+    return { q: "Ein Blech wird gleichmäßig erwärmt.", given: ["Fläche A = " + A + " m²", "Blechdicke s = " + s + " mm", "Dichte ρ = 7,9 kg/dm³", "Spezifische Wärmekapazität c = 0,5 kJ/(kg · K)", "Erwärmung ΔT = " + dT + " K"],
+      ask: "Wie viel Wärme (Wärmemenge Q) wird dafür gebraucht, in MJ?", unit: "MJ", ans: Q, tolRel: 0.015,
+      tip: "Erst die Masse: Volumen V = A · s (Dicke in m umrechnen, 4 mm = 0,004 m), dann 1 m³ = 1000 dm³, dann m = ρ · V. Danach Q = m · c · ΔT in kJ. Für MJ teilst du durch 1000.",
+      steps: ["V = A · s = " + A + " m² · " + (s / 1000) + " m = " + fmt(V, 4) + " m³ = " + fmt(V * 1000, 1) + " dm³", "m = ρ · V = 7,9 kg/dm³ · " + fmt(V * 1000, 1) + " dm³ = " + fmt(m, 1) + " kg", "Q = m · c · ΔT = " + fmt(m, 1) + " kg · 0,5 kJ/(kg · K) · " + dT + " K = " + fmt(m * c * dT, 0) + " kJ", "1 MJ = 1000 kJ, also <code>" + fmt(Q, 2) + " MJ</code>"] };
+  } },
+  { id: "pumpe", name: "Pumpenleistung mit Wirkungsgraden", gen() {
+    const P = rnd(50, 500, 10), em = rnd(82, 94), ep = rnd(45, 78, 3);
+    const ans = P * em / 100 * ep / 100;
+    return { q: "Ein Pumpenmotor nimmt elektrische Leistung auf. Ein Teil geht im Motor und ein Teil in der Pumpe verloren.", given: ["Aufgenommene elektrische Leistung P<sub>zu</sub> = " + P + " W", "Motorwirkungsgrad η<sub>M</sub> = " + em + " %", "Pumpenwirkungsgrad η<sub>P</sub> = " + ep + " %"],
+      ask: "Wie groß ist die Leistung, die als hydraulische Leistung im Medium ankommt?", unit: "W", ans, tolRel: 0.015,
+      tip: "Wirkungsgrade multiplizieren: P<sub>ab</sub> = P<sub>zu</sub> · η<sub>M</sub> · η<sub>P</sub>. Prozent vorher in Dezimalzahlen umrechnen (85 % = 0,85).",
+      steps: ["P<sub>ab</sub> = P<sub>zu</sub> · η<sub>M</sub> · η<sub>P</sub>", "P<sub>ab</sub> = " + P + " W · " + fmt(em / 100) + " · " + fmt(ep / 100) + " = <code>" + fmt(ans, 1) + " W</code>"] };
+  } },
+  { id: "blindflansch", name: "Kraft auf einen Blindflansch (Druckprobe)", gen() {
+    const d = pick([50, 65, 80, 100]), p = rnd(6, 16);
+    const A = PI / 4 * d * d, F = p / 10 * A / 1000;
+    return { q: "Eine Leitung wird für die Druckprobe mit einem Blindflansch (Deckel, der die Leitung dicht verschließt) verschlossen.", given: ["Innendurchmesser der Leitung d = " + d + " mm", "Prüfdruck p = " + p + " bar (1 bar = 0,1 N/mm²)"],
+      ask: "Mit welcher Kraft drückt der Prüfdruck auf den Blindflansch?", unit: "kN", ans: F, tolRel: 0.015,
+      tip: "F = p · A mit A = π/4 · d². Druck in N/mm² und Fläche in mm² einsetzen, dann kommt das Ergebnis in N heraus. Für kN teilst du durch 1000.",
+      steps: ["A = π/4 · d² = 0,7854 · (" + d + " mm)² = " + fmt(A, 0) + " mm²", "p = " + p + " bar = " + fmt(p / 10) + " N/mm²", "F = p · A = " + fmt(p / 10) + " N/mm² · " + fmt(A, 0) + " mm² = " + fmt(F * 1000, 0) + " N = <code>" + fmt(F) + " kN</code>"] };
+  } },
+  { id: "schraube", name: "Zugspannung in den Schrauben", gen() {
+    const d = pick([50, 65, 80, 100]), p = rnd(6, 16), n = pick([4, 8]);
+    const sz = pick([["M12", 84.3], ["M16", 157], ["M20", 245]]);
+    const F = p / 10 * PI / 4 * d * d, sig = F / (n * sz[1]);
+    const Rp = 450, S = Rp / sig;
+    return { q: "Ein Blindflansch wird mit Schrauben gehalten. Die Kraft verteilt sich gleichmäßig auf alle Schrauben.", given: ["Innendurchmesser der Leitung d = " + d + " mm", "Prüfdruck p = " + p + " bar (1 bar = 0,1 N/mm²)", "Anzahl Schrauben n = " + n + " (" + sz[0] + ")", "Spannungsquerschnitt je Schraube A<sub>S</sub> = " + fmt(sz[1], 1) + " mm²"],
+      ask: "Wie groß ist die Zugspannung in einer Schraube?", unit: "N/mm²", ans: sig, tolAbs: Math.max(0.05, sig * 0.02),
+      tip: "Erst die Gesamtkraft F = p · A (A = π/4 · d²). Dann σ = F : (n · A<sub>S</sub>).",
+      steps: ["F = p · A = " + fmt(p / 10) + " N/mm² · " + fmt(PI / 4 * d * d, 0) + " mm² = " + fmt(F, 0) + " N", "σ = F : (n · A<sub>S</sub>) = " + fmt(F, 0) + " N : (" + n + " · " + fmt(sz[1], 1) + " mm²) = <code>" + fmt(sig, 1) + " N/mm²</code>", "Zusatz, nur falls in deiner Aufgabe eine Sicherheit verlangt wird: Für Schrauben aus A2-70 ist Rp0,2 = 450 N/mm². Dann ist S = Rp0,2 : σ = 450 : " + fmt(sig, 1) + " = " + fmt(S, 1) + ". Bei geforderter fünffacher Sicherheit " + (S >= 5 ? "reicht das (S ≥ 5)." : "reicht das nicht (S &lt; 5), man bräuchte mehr oder größere Schrauben.")] };
+  } },
+  { id: "fuellzeit", name: "Füllzeit eines Behälters", gen() {
+    const VF = rnd(500, 2500, 100), r = pick([[114.3, 3.6], [88.9, 3.2], [76.1, 2.9], [60.3, 2.9]]), v = pick([1, 1.5, 2, 2.5]);
+    const di = r[0] - 2 * r[1], A = PI / 4 * di * di / 1e6, Q = A * v, t = VF / 1000 / Q / 60;
+    return { q: "Ein Behälter wird über eine Füllleitung befüllt.", given: ["Füllvolumen V = " + fmt(VF) + " L", "Rohr " + fmt(r[0], 1) + " × " + fmt(r[1], 1) + " (Außendurchmesser × Wanddicke in mm)", "Strömungsgeschwindigkeit v = " + fmt(v, 1) + " m/s"],
+      ask: "Wie lange dauert das Füllen in Minuten?", unit: "min", ans: t, tolRel: 0.02,
+      tip: "Innendurchmesser = Außendurchmesser − 2 · Wanddicke. Fläche A = π/4 · d² (in m²). Volumenstrom Q = A · v (m³/s). Zeit t = V : Q (V in m³, 1 L = 0,001 m³). Das Ergebnis in Sekunden teilst du durch 60 für Minuten.",
+      steps: ["d<sub>i</sub> = " + fmt(r[0], 1) + " − 2 · " + fmt(r[1], 1) + " = " + fmt(di, 1) + " mm = " + fmt(di / 1000, 4) + " m", "A = π/4 · d<sub>i</sub>² = " + fmt(A, 6) + " m²", "Q = A · v = " + fmt(A, 6) + " m² · " + fmt(v, 1) + " m/s = " + fmt(Q, 6) + " m³/s", "t = V : Q = " + fmt(VF / 1000, 3) + " m³ : " + fmt(Q, 6) + " m³/s = " + fmt(t * 60, 0) + " s = <code>" + fmt(t, 1) + " min</code>"] };
+  } },
+  { id: "volstrom", name: "Volumenstrom im Rohr", gen() {
+    const di = pick([25, 40, 50, 65, 80, 100]), v = pick([1, 1.5, 2, 2.5, 3]);
+    const A = PI / 4 * di * di / 1e6, Q = A * v * 3600;
+    return { q: "Wasser strömt durch ein Rohr.", given: ["Innendurchmesser d<sub>i</sub> = " + di + " mm", "Geschwindigkeit v = " + fmt(v, 1) + " m/s"],
+      ask: "Wie groß ist der Volumenstrom in m³/h?", unit: "m³/h", ans: Q, tolRel: 0.02,
+      tip: "A = π/4 · d<sub>i</sub>² (in m²). Q = A · v ergibt m³/s. Mal 3600 ergibt m³/h.",
+      steps: ["A = π/4 · (" + fmt(di / 1000, 3) + " m)² = " + fmt(A, 6) + " m²", "Q = A · v = " + fmt(A, 6) + " m² · " + fmt(v, 1) + " m/s = " + fmt(A * v, 6) + " m³/s", "· 3600 s/h = <code>" + fmt(Q, 2) + " m³/h</code>"] };
+  } },
+  { id: "ma", name: "Messumformer 4–20 mA", gen() {
+    const R = pick([[-30, 130], [0, 100], [0, 150], [-10, 90], [0, 10], [0, 16]]);
+    const unit = (R[1] === 10 || R[1] === 16) ? "bar" : "°C";
+    const T = R[0] + (R[1] - R[0]) * rnd(1, 19) / 20, I = 4 + 16 * (T - R[0]) / (R[1] - R[0]);
+    if (Math.random() < 0.5) {
+      return { q: "Ein Messumformer ist von " + R[0] + " " + unit + " bis " + R[1] + " " + unit + " auf 4 bis 20 mA kalibriert (linear).", given: ["Messwert = " + fmt(T, 1) + " " + unit],
+        ask: "Welches Stromsignal gibt der Messumformer aus?", unit: "mA", ans: I, tolAbs: 0.1,
+        tip: "Der Bereich 4 bis 20 mA umfasst 16 mA. I = 4 mA + 16 mA · (Messwert − Anfang) : (Ende − Anfang)",
+        steps: ["Messspanne: " + R[1] + " − (" + R[0] + ") = " + (R[1] - R[0]) + " " + unit, "Anteil: (" + fmt(T, 1) + " − (" + R[0] + ")) : " + (R[1] - R[0]) + " = " + fmt((T - R[0]) / (R[1] - R[0]), 3), "I = 4 mA + 16 mA · " + fmt((T - R[0]) / (R[1] - R[0]), 3) + " = <code>" + fmt(I, 2) + " mA</code>"] };
+    }
+    const Ir = Math.round(I * 10) / 10, Tx = R[0] + (R[1] - R[0]) * (Ir - 4) / 16;
+    return { q: "Ein Messumformer ist von " + R[0] + " " + unit + " bis " + R[1] + " " + unit + " auf 4 bis 20 mA kalibriert (linear).", given: ["Stromsignal I = " + fmt(Ir, 1) + " mA"],
+      ask: "Welchem Messwert entspricht das?", unit: unit, ans: Tx, tolAbs: Math.max(0.05, (R[1] - R[0]) * 0.005),
+      tip: "Erst den Anteil am Bereich: (I − 4 mA) : 16 mA. Dann Messwert = Anfang + Anteil · (Ende − Anfang).",
+      steps: ["Anteil = (" + fmt(Ir, 1) + " − 4) : 16 = " + fmt((Ir - 4) / 16, 3), "Messwert = " + R[0] + " + " + fmt((Ir - 4) / 16, 3) + " · " + (R[1] - R[0]) + " = <code>" + fmt(Tx, 1) + " " + unit + "</code>"] };
+  } },
+  { id: "strang", name: "Kraft im Strang eines Kettengehänges", gen() {
+    const m = pick([500, 800, 1000, 1500, 2000, 2500]), b = pick([30, 45, 60]);
+    const G = m * 9.81, F = G / (2 * Math.cos(b * PI / 180)) / 1000;
+    return { q: "Eine Last hängt an einem Zweistrang-Kettengehänge. Der Neigungswinkel β wird von der Senkrechten aus gemessen.", given: ["Masse der Last m = " + fmt(m) + " kg", "Neigungswinkel β = " + b + "°", "Fallbeschleunigung g = 9,81 m/s²"],
+      ask: "Wie groß ist die Kraft in einem Strang?", unit: "kN", ans: F, tolRel: 0.02,
+      tip: "Gewichtskraft G = m · g. Die Last verteilt sich auf 2 Stränge, schräge Stränge tragen mehr: F = G : (2 · cos β).",
+      steps: ["G = m · g = " + fmt(m) + " kg · 9,81 m/s² = " + fmt(G, 0) + " N", "F = G : (2 · cos " + b + "°) = " + fmt(G, 0) + " N : (2 · " + fmt(Math.cos(b * PI / 180), 3) + ") = " + fmt(F * 1000, 0) + " N = <code>" + fmt(F, 2) + " kN</code>", "Ein Neigungswinkel über 60° ist nicht zulässig."] };
+  } },
+  { id: "h2", name: "Wasserstoff und Wasserbedarf der Elektrolyse", gen() {
+    const P = pick([500, 800, 1200, 1800, 2400]), kg = P / 53;
+    if (Math.random() < 0.5) {
+      return { q: "Eine Elektrolyseanlage läuft mit konstanter elektrischer Leistung.", given: ["Elektrische Leistung P = " + fmt(P) + " kW", "Energieeinsatz W' = 53 kWh je kg Wasserstoff"],
+        ask: "Wie viel Wasserstoff entsteht pro Stunde?", unit: "kg/h", ans: kg, tolRel: 0.02,
+        tip: "Energie pro Stunde = Leistung · 1 h. Dann durch den Energieeinsatz je kg teilen.",
+        steps: ["Energie in 1 h: " + fmt(P) + " kW · 1 h = " + fmt(P) + " kWh", "m = " + fmt(P) + " kWh : 53 kWh/kg = <code>" + fmt(kg, 1) + " kg</code> je Stunde"] };
+    }
+    return { q: "Eine Elektrolyseanlage läuft mit konstanter elektrischer Leistung.", given: ["Elektrische Leistung P = " + fmt(P) + " kW", "Energieeinsatz W' = 53 kWh je kg Wasserstoff", "Wasserbedarf V' = 9 L je kg Wasserstoff"],
+      ask: "Wie viel Wasser wird pro Stunde verbraucht?", unit: "L/h", ans: kg * 9, tolRel: 0.02,
+      tip: "Erst die Wasserstoffmenge je Stunde (Energie : Energieeinsatz je kg), dann mal 9 L/kg.",
+      steps: ["Wasserstoff: " + fmt(P) + " kWh : 53 kWh/kg = " + fmt(kg, 2) + " kg je Stunde", "Wasser: " + fmt(kg, 2) + " kg · 9 L/kg = <code>" + fmt(kg * 9, 1) + " L</code> je Stunde"] };
+  } },
+  { id: "gas", name: "Schutzgasverbrauch aus dem Flaschendruck", gen() {
+    const V = pick([20, 40, 50]), p1 = rnd(150, 200, 5), p2 = rnd(20, 100, 5), dp = p1 - p2;
+    const gas = V * dp;
+    if (Math.random() < 0.5) {
+      return { q: "Eine Schutzgasflasche wird beim Schweißen teilweise entleert. Das Gas dehnt sich beim Ausströmen auf 1 bar aus (vereinfachte Annahme).", given: ["Flaschenvolumen V = " + V + " L", "Druck vorher p<sub>1</sub> = " + p1 + " bar", "Druck nachher p<sub>2</sub> = " + p2 + " bar"],
+        ask: "Wie viel Liter Schutzgas (bei 1 bar) wurden entnommen?", unit: "L", ans: gas, tolRel: 0.01,
+        tip: "Je 1 bar Druckabfall strömt so viel Gas aus, wie die Flasche groß ist. Also Gasmenge (bei 1 bar) = Flaschenvolumen · Druckabfall. Druckabfall = p<sub>1</sub> − p<sub>2</sub>.",
+        steps: ["Druckabfall: " + p1 + " bar − " + p2 + " bar = " + dp + " bar", "Gasmenge = V · Δp = " + V + " L · " + dp + " = <code>" + fmt(gas, 0) + " L</code> (bei 1 bar)"] };
+    }
+    const q = pick([8, 10, 12, 15]), t = gas / q;
+    return { q: "Beim Schweißen strömt Schutzgas mit konstanter Menge. Das Gas dehnt sich beim Ausströmen auf 1 bar aus (vereinfachte Annahme).", given: ["Flaschenvolumen V = " + V + " L", "Druck vorher " + p1 + " bar, nachher " + p2 + " bar", "Durchflussmenge " + q + " L/min"],
+      ask: "Wie viele Minuten wurde geschweißt?", unit: "min", ans: t, tolRel: 0.02,
+      tip: "Erst die entnommene Gasmenge (V · Druckabfall), dann durch die Durchflussmenge teilen.",
+      steps: ["Gasmenge = " + V + " L · (" + p1 + " − " + p2 + ") = " + fmt(gas, 0) + " L", "t = " + fmt(gas, 0) + " L : " + q + " L/min = <code>" + fmt(t, 1) + " min</code>"] };
+  } },
+  { id: "dehnung", name: "Wärmedehnung einer Leitung", gen() {
+    const l = pick([8, 12, 20, 30, 45]), dT = pick([40, 60, 80, 100]), a = 16e-6;
+    const ans = a * l * 1000 * dT;
+    return { q: "Eine Edelstahlleitung wird beim Betrieb wärmer.", given: ["Länge l = " + l + " m", "Temperaturerhöhung ΔT = " + dT + " K", "Längenausdehnungskoeffizient α = 0,000016 1/K (= 16 · 10⁻⁶ 1/K)"],
+      ask: "Um wie viel mm wird die Leitung länger?", unit: "mm", ans, tolRel: 0.02,
+      tip: "Δl = α · l · ΔT. Die Länge zuerst in mm umrechnen (1 m = 1000 mm), dann kommt das Ergebnis in mm.",
+      steps: ["l = " + l + " m = " + fmt(l * 1000) + " mm", "Δl = α · l · ΔT = 0,000016 1/K · " + fmt(l * 1000) + " mm · " + dT + " K = <code>" + fmt(ans, 1) + " mm</code>"] };
+  } },
+  { id: "einheit", name: "Druckeinheiten umrechnen", gen() {
+    const mb = pick([50, 100, 250, 500, 800, 2500, 4500]);
+    if (Math.random() < 0.5) return { q: "Rechne den Druck in eine andere Einheit um.", given: ["p = " + fmt(mb) + " mbar", "Umrechnung: 1 bar = 1000 mbar = 100 000 Pa"], ask: "Wie viel Pascal sind das?", unit: "Pa", ans: mb * 100, tolAbs: 0.5,
+      tip: "1 bar = 1000 mbar = 100 000 Pa. Also 1 mbar = 100 Pa.", steps: ["1 mbar = 100 Pa", fmt(mb) + " mbar · 100 = <code>" + fmt(mb * 100, 0) + " Pa</code>"] };
+    return { q: "Rechne den Druck in eine andere Einheit um.", given: ["p = " + fmt(mb) + " mbar", "Umrechnung: 1 bar = 1000 mbar = 100 000 Pa"], ask: "Wie viel bar sind das?", unit: "bar", ans: mb / 1000, tolAbs: 0.005,
+      tip: "1 bar = 1000 mbar. Du teilst durch 1000.", steps: [fmt(mb) + " mbar : 1000 = <code>" + fmt(mb / 1000, 3) + " bar</code>"] };
+  } },
+];
+
+let cur = null, curKind = null, right = 0, total = 0, done = false;
+KINDS.forEach(k => { const o = document.createElement("option"); o.value = k.id; o.textContent = k.name; $("sel").appendChild(o); });
+const allOpt = document.createElement("option"); allOpt.value = "mix"; allOpt.textContent = "Alles gemischt"; $("sel").insertBefore(allOpt, $("sel").firstChild);
+$("sel").value = "mix";
+$("sel").onchange = () => next();
+
+function next(sameKind) {
+  if (!(sameKind && curKind)) {
+    if ($("sel").value === "mix") {
+      let k; do { k = pick(KINDS); } while (curKind && k.id === curKind.id && KINDS.length > 1);
+      curKind = k;
+    } else curKind = KINDS.find(k => k.id === $("sel").value);
+  }
+  cur = curKind.gen(); done = false; show();
+}
+
+function show() {
+  const c = cur;
+  $("card").innerHTML =
+    '<span class="tag">' + curKind.name + "</span>" +
+    '<p class="q">' + c.q + "</p>" +
+    '<div class="given"><b>Gegeben:</b><ul>' + c.given.map(g => "<li>" + g + "</li>").join("") + "</ul></div>" +
+    '<p class="q"><b>Gesucht:</b> ' + c.ask + "</p>" +
+    '<div class="num"><input id="inp" inputmode="' + (c.ans < 0 ? "text" : "decimal") + '" autocomplete="off" placeholder="Ergebnis eingeben"><span>' + c.unit + "</span></div>" +
+    '<p class="hint">Tippe die Zahl ohne Tausenderpunkt ein, z. B. 1500,5. Komma oder Punkt als Dezimalzeichen geht beide. Runde auf 1 bis 2 Nachkommastellen.</p>' +
+    "<details><summary>Tipp: Formel und Vorgehen</summary><p>" + c.tip + "</p></details>" +
+    '<button class="btn" id="check" disabled>Prüfen</button><div id="fb"></div>';
+  const inp = $("inp");
+  inp.oninput = () => { $("check").disabled = inp.value.trim() === ""; };
+  inp.onkeydown = e => { if (e.key === "Enter" && !$("check").disabled) $("check").click(); };
+  $("check").onclick = check;
+}
+
+function check() {
+  if (done) return;
+  const v = parseFloat($("inp").value.replace(/\s/g, "").replace(",", "."));
+  const tol = cur.tolAbs !== undefined ? cur.tolAbs : Math.abs(cur.ans) * (cur.tolRel || 0.015);
+  const ok = !isNaN(v) && Math.abs(v - cur.ans) <= tol;
+  done = true; total++; if (ok) right++;
+  $("inp").disabled = true; $("check").style.display = "none";
+  let head, extra = "";
+  if (ok) head = "✅ Richtig: " + fmt(cur.ans, 2) + " " + cur.unit;
+  else {
+    head = "❌ Nicht ganz. Dein Wert: " + (isNaN(v) ? "keine Zahl" : fmt(v, 3)) + ". Richtig ist " + fmt(cur.ans, 2) + " " + cur.unit + ".";
+    if (!isNaN(v) && v > 0 && cur.ans > 0) {
+      const r = v / cur.ans;
+      const near = (x) => Math.abs(r / x - 1) < 0.03;
+      if (near(1000) || near(0.001)) extra = "<p>Der Wert ist um den Faktor 1000 daneben. Fehlt eine Umrechnung (z. B. N → kN, W → kW, mm → m, L → m³)?</p>";
+      else if (near(10) || near(0.1)) extra = "<p>Der Wert ist um den Faktor 10 daneben. Schau nochmal auf Kommastellen und Einheiten.</p>";
+      else if (near(60) || near(1 / 60)) extra = "<p>Der Wert ist um den Faktor 60 daneben. Sekunden und Minuten verwechselt?</p>";
+    }
+  }
+  const steps = "<ol>" + cur.steps.map(s => "<li>" + s + "</li>").join("") + "</ol>";
+  $("fb").innerHTML = '<div class="fb ' + (ok ? "ok" : "bad") + '"><b>' + head + "</b>" + extra +
+    (ok ? "<details><summary>Lösungsweg ansehen</summary>" + steps + "</details>" : "<b style=\"margin-top:8px\">Lösungsweg</b>" + steps) + "</div>" +
+    '<button class="btn" id="n1">Weiter mit neuen Zahlen</button>' +
+    '<button class="btn ghost" id="n2">Andere Aufgabenart</button>';
+  $("n1").onclick = () => next($("sel").value === "mix" ? false : true);
+  $("n2").onclick = () => next(false);
+  $("n1").focus();
+  $("stat").textContent = right + " von " + total + " richtig in dieser Runde.";
+}
+
+next();
+
+</script>
+</body>
+</html>

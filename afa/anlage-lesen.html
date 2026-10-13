@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anlage lesen</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  table{border-collapse:collapse;width:100%;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:4px 8px;text-align:left}
+  th{background:var(--accent-soft)}
+  .sec{margin:14px 0 4px;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+  <p class="sub"><a href="../index.html">← Zur Übersicht</a></p>
+  <h1>Anlage lesen</h1>
+  <p class="sub">In der Prüfung stehen die Antworten oft in den Unterlagen: Datenblatt, Fließschema, Stückliste. Hier übst du, die richtigen Angaben zu finden. Lies erst die Unterlagen, dann beantworte die Fragen.</p>
+
+  <div class="card" style="margin-top:0">
+    <h2>Mini-Anlage: Wasserbehälter mit Pumpe</h2>
+    <p>Aus dem Behälter BE01 fördert die Pumpe PL01 Wasser zu einem Verbraucher. Alle Daten sind erfunden.</p>
+
+    <p class="sec">Fließschema (vereinfacht, Kästchen statt Norm-Symbole)</p>
+    <svg class="iso" viewBox="0 0 700 190" role="img" aria-label="Fließschema der Mini-Anlage" style="max-height:none">
+      <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="currentColor" style="color:var(--text)"/></marker></defs>
+      <g font-size="12" style="font-family:system-ui,sans-serif">
+        <rect x="10" y="60" width="90" height="90" rx="8" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/>
+        <text x="55" y="100" text-anchor="middle" style="fill:var(--text)">BE01</text><text x="55" y="116" text-anchor="middle" style="fill:var(--muted)">Behälter</text>
+        <path d="M100 135 H140" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+        <rect x="140" y="120" width="60" height="30" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="170" y="139" text-anchor="middle" style="fill:var(--text)">VV01</text>
+        <path d="M200 135 H235" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+        <rect x="235" y="120" width="60" height="30" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="265" y="139" text-anchor="middle" style="fill:var(--text)">FL01</text>
+        <path d="M295 135 H330" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+        <circle cx="355" cy="135" r="24" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="355" y="139" text-anchor="middle" style="fill:var(--text)">PL01</text>
+        <path d="M379 135 H410" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+        <rect x="410" y="120" width="60" height="30" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="440" y="139" text-anchor="middle" style="fill:var(--text)">VH01</text>
+        <path d="M470 135 H505" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+        <rect x="505" y="120" width="60" height="30" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="535" y="139" text-anchor="middle" style="fill:var(--text)">VV02</text>
+        <path d="M565 135 H600" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+        <rect x="600" y="105" width="90" height="60" rx="8" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="645" y="132" text-anchor="middle" style="fill:var(--text)">Verbraucher</text><text x="645" y="148" text-anchor="middle" style="fill:var(--muted)">TAH 02</text>
+        <path d="M55 20 V60" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+        <rect x="30" y="2" width="50" height="22" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="55" y="17" text-anchor="middle" style="fill:var(--text)">VC01</text>
+        <text x="95" y="38" style="fill:var(--muted)">Zulauf, geregelt über LIC 01 am Behälter</text>
+      </g>
+    </svg>
+    <p class="hint">Die Pfeile zeigen die Strömungsrichtung. VV = Absperrarmatur, VH = Rückflussverhinderer (Sicherungsarmatur), VC = Regelarmatur, FL = Filter, PL = Pumpe, BE = Behälter. LIC = Füllstand anzeigen und regeln, TAH = Temperatur-Alarm bei zu hohem Wert.</p>
+
+    <p class="sec">Daten</p>
+    <table>
+      <tr><th colspan="2">Behälter BE01</th></tr>
+      <tr><td>Nennvolumen</td><td>1200 L</td></tr>
+      <tr><td>Füllvolumen im Betrieb</td><td>900 L</td></tr>
+      <tr><td>Masse leer</td><td>310 kg</td></tr>
+      <tr><td>Medium: Wasser, Dichte</td><td>1,0 kg/dm³</td></tr>
+      <tr><th colspan="2">Pumpe PL01</th></tr>
+      <tr><td>Aufgenommene elektrische Leistung</td><td>750 W</td></tr>
+      <tr><td>Motorwirkungsgrad / Pumpenwirkungsgrad</td><td>90 % / 60 %</td></tr>
+      <tr><td>Förderstrom</td><td>6 m³/h</td></tr>
+    </table>
+
+    <p class="sec">Stückliste</p>
+    <table>
+      <tr><th>Pos.</th><th>Stück</th><th>Benennung</th><th>Norm / Maß</th><th>Werkstoff</th></tr>
+      <tr><td>1</td><td>1</td><td>Behälter BE01</td><td>1200 L</td><td>1.4571</td></tr>
+      <tr><td>2</td><td>2</td><td>Vorschweißflansch DN50 PN16</td><td>EN 1092-1</td><td>1.4571</td></tr>
+      <tr><td>3</td><td>1</td><td>Rohr, gerade</td><td>60,3 × 2,9 – 1500</td><td>1.4571</td></tr>
+      <tr><td>4</td><td>2</td><td>Bogen 90°</td><td>60,3 × 2,9</td><td>1.4571</td></tr>
+      <tr><td>5</td><td>8</td><td>Sechskantschraube</td><td>M16 × 60</td><td>A2-70</td></tr>
+      <tr><td>6</td><td>2</td><td>Flachdichtung</td><td>DN50 PN16</td><td>Graphit</td></tr>
+    </table>
+  </div>
+
+  <div class="meta" id="meta" style="display:none;margin-top:16px"><span id="count"></span><span id="topic"></span></div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="card" id="card"></div>
+</main>
+<script>window.MC_KEY = "anlage"; window.MC_SCROLL = "meta";</script>
+<script src="anlage-fragen.js"></script>
+<script src="../assets/mc.js"></script>
+</body>
+</html>
