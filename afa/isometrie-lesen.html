@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teil B · Isometrie lesen</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  table{border-collapse:collapse;width:100%;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:4px 8px;text-align:left}
+  th{background:var(--accent-soft)}
+  ul.leg{padding-left:20px;margin:6px 0}
+  ul.leg li{margin:4px 0;font-size:.95rem}
+  .chips .chip small{opacity:.8}
+</style>
+</head>
+<body>
+<main>
+  <p class="sub"><a href="../index.html">← Zur Übersicht</a></p>
+  <h1>Teil B · Isometrie lesen</h1>
+  <p class="sub">Vier Rohrleitungs-Zeichnungen nach DIN ISO 6412-2, vom Einstieg bis zum Prüfungsniveau. Lies die Zeichnung, dann beantworte die Fragen darunter. Die Zeichnung kannst du seitlich wischen. Der Knopf „↑ Zeichnung“ unten rechts bringt dich zurück zum Bild.</p>
+
+  <div class="chips" id="pick"></div>
+
+  <div class="card" id="scheme">
+    <h2 id="s-title"></h2>
+    <p id="s-desc"></p>
+    <div class="isoscroll" id="s-draw"></div>
+    <details><summary>Zeichenerklärung (was bedeutet welches Symbol?)</summary><ul class="leg" id="s-leg"></ul></details>
+    <details id="s-tabwrap"><summary>Koordinatentabelle</summary><div id="s-tab"></div></details>
+  </div>
+
+  <div class="meta" id="meta" style="display:none;margin-top:16px"><span id="count"></span><span id="topic"></span></div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="card" id="card"></div>
+  <p class="hint">Alle Zeichnungen und Zahlen sind frei erfunden. Einige Symbole sind für die Übung vereinfacht, in der Zeichenerklärung steht dann „vereinfacht“. In der Norm sehen Pumpe, Stütze, Behälter und Höhenangabe etwas anders aus.</p>
+</main>
+<button class="fab" id="toDraw" type="button">↑ Zeichnung</button>
+
+<script>window.MC_MANUAL = true; window.MC_SCROLL = "meta";</script>
+<script src="../assets/iso-draw.js"></script>
+<script src="iso-schemata.js"></script>
+<script src="../assets/backup.js"></script>
+<script src="../assets/mc.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const LEG = {
+    axes: "Achsen (Kreuz oben links): Z geht nach oben, X nach rechts oben, Y nach links oben. Das Minus ist die Gegenrichtung. In der Sprache der Prüfung: +X = rechts, −X = links, +Y = hinten, −Y = vorn, +Z = oben, −Z = unten. (So zeichnen wir es hier. Frag in der Berufsschule, ob ihr es anders macht.)",
+    flansch: "Zwei Querstriche am Rohrende = Flanschverbindung. Der Punkt daneben ist die Schweißnaht des Vorschweißflansches.",
+    punkt: "Ausgefüllter Punkt = Schweißnaht. Ein Bogen ist ein Knick (vereinfacht), an einem Schweißbogen sitzen zwei Nähte. Die Flanschstriche direkt an Ventil und Pumpe gehören zum Bauteil, dort ist kein Punkt gezeichnet.",
+    abs: "Zwei leere Dreiecke mit Querstrichen = Ventil (Absperrventil) mit Flanschen.",
+    rueck: "Zwei Dreiecke, eins davon ausgefüllt = Rückflussverhinderer (Rückschlagventil). Er lässt nur in Strömungsrichtung durch (vereinfacht, die Norm kennt dafür kein eigenes Symbol).",
+    pumpe: "Großer Kreis mit Dreieck, Motor als Kästchen darüber = Pumpe (vereinfacht). Das Regelventil sieht anders aus: kleiner Kreis mit Stab auf zwei Dreiecken (kommt hier nicht vor).",
+    red: "Kegel mit zwei Nennweiten darüber (breite Seite / schmale Seite) = Reduzierstück. An jedem Ende sitzt eine Schweißnaht.",
+    stuetze: "Senkrechter Strich mit Fuß = Rohrstütze (vereinfacht).",
+    flow: "Kleines ausgefülltes Dreieck auf der Leitung = Strömungsrichtung (die Spitze zeigt in Strömungsrichtung).",
+    behaelter: "Zylinder = Behälter (B), Kasten = Verbraucher oder Wärmetauscher (WT). V = Ventil, P = Pumpe, St = Stütze.",
+    dim: "Maßlinie mit Pfeilen = Länge in mm, von Knickpunkt zu Knickpunkt (Mittellinie). Ventile und Pumpen sind schon mitgerechnet.",
+    hoehe: "Linie mit Dreieck und Zahl = Höhenangabe in mm über dem Bezug, meist dem Boden (vereinfacht).",
+    neig: "Rechtwinkliges Dreieck über der Leitung = Neigung (Gefälle). Das Dreieck ist an einem Ende dick, am anderen spitz. Die Spitze zeigt zum tieferen Ende.",
+    aux: "Schraffiertes Dreieck = Hilfsebene: Das Rohr läuft schräg über Eck und nicht in einer Achsrichtung. Das kleine Quadrat markiert den rechten Winkel.",
+    baust: "Punkt mit kleiner Fahne = Schweißnaht, die auf der Baustelle ausgeführt wird.",
+    kreuz: "Eine Linie mit Lücke an einer Kreuzung = diese Leitung läuft hinter der anderen vorbei.",
+    pos: "Zahl im Kreis = Nummer des Punktes (Knickstelle oder Anschluss). Die Koordinatentabelle nennt zu jeder Nummer x, y und z."
+  };
+  $("pick").innerHTML = SCHEMES.map((s, i) => '<button class="chip big" data-i="' + i + '">' + (i + 1) + " · " + s.level + "</button>").join("");
+  function choose(i) {
+    const sc = SCHEMES[i], r = IsoDraw.render(sc);
+    document.querySelectorAll("#pick .chip").forEach((b, k) => b.classList.toggle("on", k === i));
+    $("s-title").textContent = sc.title; $("s-desc").textContent = sc.desc;
+    $("s-draw").innerHTML = r.svg;
+    $("s-leg").innerHTML = sc.legend.map(k => "<li>" + LEG[k] + "</li>").join("");
+    $("s-tabwrap").style.display = sc.table ? "" : "none";
+    if (sc.table) { $("s-tab").innerHTML = IsoDraw.coordTable(sc); $("s-tabwrap").open = true; }
+    window.FRAGEN = sc.questions(r.stats);
+    window.MC_KEY = "kai-isolese" + (i + 1);
+    window.MC_NEXT = i < SCHEMES.length - 1 ? () => { choose(i + 1); $("scheme").scrollIntoView(); } : null;
+    window.MC_NEXT_LABEL = "Weiter zu Schema " + (i + 2) + " →";
+    try { history.replaceState(null, "", "#" + (i + 1)); } catch (e) {}
+    window.MCInit();
+  }
+  document.querySelectorAll("#pick .chip").forEach(b => b.onclick = () => choose(+b.dataset.i));
+  $("toDraw").onclick = () => $("scheme").scrollIntoView({ behavior: "smooth" });
+  const h = parseInt((location.hash || "").slice(1), 10);
+  choose(h >= 1 && h <= SCHEMES.length ? h - 1 : 0);
+})();
+</script>
+</body>
+</html>
