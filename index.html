@@ -39,6 +39,22 @@
 
   <h2 class="sec">Weitere Fächer</h2>
   <a class="item" href="technische-mathematik/quiz.html"><span>Technische Mathematik</span><span class="badge">Quiz · 12 Aufgaben</span></a>
+
+  <h2 class="sec">Fortschritt sichern</h2>
+  <p class="sub grpsub" id="bk-hint">Dein Lernstand liegt nur in diesem Browser. Sichere ihn einmal pro Woche als Text in Notion.</p>
+  <a class="item" href="sicherung.html"><span>Fortschritt sichern oder wiederherstellen<br><small class="badge">Text kopieren und in Notion aufbewahren</small></span><span class="badge" id="bk-badge"></span></a>
 </main>
+<script src="assets/backup.js"></script>
+<script>
+(function () {
+  try {
+    var st = window.KaiBackup.status(), h = document.getElementById("bk-hint"), b = document.getElementById("bk-badge");
+    if (!st.hasData) { b.textContent = "noch nichts zu sichern"; return; }
+    if (!st.last) { h.textContent = "Du hast noch nie gesichert. Mach das jetzt, dann geht nichts verloren."; b.textContent = "jetzt sichern"; }
+    else if (st.daysSince >= 7) { h.textContent = "Deine letzte Sicherung ist " + st.daysSince + " Tage her. Sichere bitte wieder."; b.textContent = "fällig"; }
+    else b.textContent = "zuletzt " + window.KaiBackup.fmtDate(st.last);
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
