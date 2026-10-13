@@ -1,6 +1,6 @@
 // Trainer für Auswahlfragen (wie Teil A der IHK-Prüfung: 5 Antworten, genau eine ist richtig).
 // Fragen kommen aus window.FRAGEN: {t: Thema, q: Frage, o: [richtige Antwort, 4 falsche], why: Erklärung}
-// Optional: window.MC_TITLE_KEY (eigener Speicherplatz je Seite)
+// Optional: window.MC_KEY (eigener Speicherplatz je Seite), window.MC_SCROLL (Element-ID, zu dem nach oben gescrollt wird)
 (function () {
   const $ = id => document.getElementById(id);
   const ALL = window.FRAGEN;
@@ -9,7 +9,8 @@
   const PRUEFUNG_N = Math.min(28, ALL.length);
   const RUNDE = 10;
   let sel = new Set(TOPICS);
-  let mode = "ueben", list = [], idx = 0, log = [], timer = null, t0 = 0, showTime = false, seen = new Set();
+  // Zustand der laufenden Runde
+  let mode = "ueben", list = [], orders = [], ans = [], idx = 0, timer = null, t0 = 0, showTime = false, showGrid = false, seen = new Set();
 
   const toTop = () => { const t = window.MC_SCROLL && $(window.MC_SCROLL); t ? t.scrollIntoView() : window.scrollTo(0, 0); };
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -22,7 +23,10 @@
     const days = Math.round((new Date(new Date().toDateString()) - new Date(new Date(d).toDateString())) / 864e5);
     return days <= 0 ? "heute" : days === 1 ? "gestern" : "vor " + days + " Tagen";
   };
+  const answered = () => ans.filter(a => a !== null).length;
+  const openIdx = () => ans.map((a, i) => a === null ? i : -1).filter(i => i >= 0);
 
+  // ---------- Startbildschirm ----------
   function home() {
     clearInterval(timer);
     $("meta").style.display = "none"; $("prog").style.width = "0";
@@ -37,13 +41,13 @@
       (last ? '<p class="hint" style="margin-top:0">Zuletzt geübt: ' + ago(last.date) + ", " + last.right + " von " + last.total + " richtig.</p>" : "") +
       '<button class="btn" id="go-10" style="margin-top:6px">' + RUNDE + " Fragen, gemischt</button>" +
       (wrongPool.length ? '<button class="btn ghost" id="go-wrong">' + wrongPool.length + " Fragen, die noch wackeln</button>" : "") +
-      '<p class="hint">Nach jeder Frage siehst du sofort, ob sie stimmt. Du kannst jederzeit aufhören.</p>' +
+      '<p class="hint">Nach jeder Frage siehst du sofort, ob sie stimmt. Du kannst jederzeit aufhören oder zurückgehen.</p>' +
       "<details><summary>Themen auswählen</summary>" +
       '<div class="chips" id="chips">' + chips + "</div>" +
       '<p class="hint"><button class="chip" id="all">Alle</button> <button class="chip" id="none">Keine</button></p>' +
       '<button class="btn" id="go-themen">Mit diesen Themen üben</button></details>' +
       "<details><summary>Prüfungs-Simulation (" + PRUEFUNG_N + " Fragen)</summary>" +
-      "<p>Hier gibt es keine Note, du übst nur. Das Ergebnis kommt erst am Ende, so wie in der Prüfung. In der echten Prüfung hast du 105 Minuten für Teil A und Teil B zusammen. Für Teil A kannst du etwa 45 Minuten rechnen.</p>" +
+      "<p>Hier gibt es keine Note, du übst nur. Das Ergebnis kommt erst am Ende, so wie in der Prüfung. Du kannst Fragen überspringen, zurückgehen und offene Fragen später beantworten. In der echten Prüfung hast du 105 Minuten für Teil A und Teil B zusammen. Für Teil A kannst du etwa 45 Minuten rechnen.</p>" +
       '<button class="btn ghost" id="go-pruef">Simulation starten</button></details>';
     document.querySelectorAll("#chips .chip").forEach(b => b.onclick = () => {
       sel.has(b.dataset.t) ? sel.delete(b.dataset.t) : sel.add(b.dataset.t);
@@ -69,7 +73,9 @@
   }
 
   function start(m, items) {
-    mode = m; list = items; idx = 0; log = [];
+    mode = m; list = items; idx = 0; showGrid = false;
+    ans = items.map(() => null);
+    orders = items.map(() => shuffle([0, 1, 2, 3, 4]));
     $("meta").style.display = "";
     clearInterval(timer);
     if (mode === "pruefung") { t0 = Date.now(); showTime = false; timer = setInterval(tick, 1000); tick(); } else $("topic").innerHTML = "";
@@ -84,56 +90,92 @@
     $("tt").onclick = () => { showTime = !showTime; tick(); };
   }
 
+  // Übersicht aller Fragen (nur Prüfungs-Simulation)
+  function gridHTML() {
+    return '<div class="qgrid">' + list.map((_, i) =>
+      '<button class="chip' + (ans[i] !== null ? " on" : "") + (i === idx ? " cur" : "") + '" data-i="' + i + '" aria-label="Frage ' + (i + 1) + (ans[i] === null ? ", offen" : ", beantwortet") + '">' + (i + 1) + "</button>").join("") + "</div>" +
+      '<p class="hint">Gefüllt = beantwortet, leer = noch offen.</p>';
+  }
+
+  // ---------- eine Frage anzeigen ----------
   function render() {
-    if (idx >= list.length) return finish();
     toTop();
-    const f = list[idx];
-    const order = shuffle([0, 1, 2, 3, 4]);
+    const f = list[idx], order = orders[idx];
+    const locked = mode === "ueben" && ans[idx] !== null;      // im Üben-Modus ist eine geprüfte Frage gesperrt
     $("count").textContent = "Frage " + (idx + 1) + " von " + list.length;
-    $("prog").style.width = (idx / list.length * 100) + "%";
+    $("prog").style.width = (answered() / list.length * 100) + "%";
+    let chosen = ans[idx];
     $("card").innerHTML =
       '<span class="tag">' + f.t + "</span>" +
       '<p class="q">' + f.q + "</p>" +
       order.map(k => '<button class="opt" data-k="' + k + '">' + f.o[k] + "</button>").join("") +
-      '<button class="btn" id="check" disabled>' + (mode === "ueben" ? "Prüfen" : "Weiter") + "</button>" +
-      (mode === "pruefung" ? '<button class="btn ghost" id="skip">Überspringen</button>' : "") +
-      '<button class="btn ghost" id="stop">Beenden und auswerten</button>' +
+      '<div class="nav">' +
+      (idx > 0 ? '<button class="btn ghost" id="back">← Zurück</button>' : "") +
+      '<button class="btn" id="check">' + (mode === "ueben" ? (locked ? (idx === list.length - 1 ? "Auswertung" : "Weiter →") : "Prüfen") : (idx === list.length - 1 ? "Zur Übersicht →" : "Weiter →")) + "</button>" +
+      "</div>" +
+      (mode === "pruefung" ? '<p><button class="chip" id="grid">' + (showGrid ? "Übersicht ausblenden" : "Alle Fragen anzeigen") + "</button></p>" + (showGrid ? gridHTML() : "") : "") +
+      '<p><button class="chip" id="stop">Beenden und auswerten</button></p>' +
       '<div id="fb"></div>';
-    let chosen = null, done = false;
-    document.querySelectorAll(".opt").forEach(b => b.onclick = () => {
-      if (done) return;
-      document.querySelectorAll(".opt").forEach(x => x.classList.remove("sel"));
-      b.classList.add("sel"); chosen = +b.dataset.k; $("check").disabled = false;
+
+    const opts = [...document.querySelectorAll(".opt")];
+    const mark = (k, cls) => opts.forEach(b => { if (+b.dataset.k === k) b.classList.add(cls); });
+    if (chosen !== null) mark(chosen, locked ? (chosen === 0 ? "ok" : "bad") : "sel");
+    if (locked) {
+      opts.forEach(b => b.disabled = true); mark(0, "ok");
+      $("fb").innerHTML = '<div class="fb ' + (chosen === 0 ? "ok" : "bad") + '"><b>' + (chosen === 0 ? "✅ Richtig" : "❌ Nicht ganz. Richtig ist die grün markierte Antwort.") + "</b>" + f.why + "</div>";
+    }
+    opts.forEach(b => b.onclick = () => {
+      if (locked) return;
+      opts.forEach(x => x.classList.remove("sel"));
+      b.classList.add("sel"); chosen = +b.dataset.k;
+      if (mode === "ueben") $("check").disabled = false;
+      if (mode === "pruefung") { ans[idx] = chosen; $("prog").style.width = (answered() / list.length * 100) + "%"; if (showGrid) refreshGrid(); }
     });
-    $("stop").onclick = () => { if (log.length) finish(); else home(); };
-    if ($("skip")) $("skip").onclick = () => { log.push({ f, ok: false, chosen: null, skipped: true }); idx++; render(); };
+    if (mode === "ueben" && !locked) $("check").disabled = chosen === null;
+    if ($("back")) $("back").onclick = () => { idx--; render(); };
+    $("stop").onclick = () => { if (mode === "pruefung") review(true); else if (answered()) finish(); else home(); };
+    if ($("grid")) $("grid").onclick = () => { showGrid = !showGrid; render(); };
+    document.querySelectorAll(".qgrid .chip").forEach(b => b.onclick = () => { idx = +b.dataset.i; render(); });
+
     $("check").onclick = () => {
-      if (done) { idx++; return render(); }
-      const ok = chosen === 0;
-      log.push({ f, ok, chosen });
-      if (mode === "pruefung") { idx++; return render(); }
-      done = true;
-      document.querySelectorAll(".opt").forEach(b => {
-        b.disabled = true;
-        if (+b.dataset.k === 0) b.classList.add("ok"); else if (+b.dataset.k === chosen) b.classList.add("bad");
-      });
-      $("fb").innerHTML = '<div class="fb ' + (ok ? "ok" : "bad") + '"><b>' + (ok ? "✅ Richtig" : "❌ Nicht ganz. Richtig ist die grün markierte Antwort.") + "</b>" + f.why + "</div>";
-      $("check").textContent = idx === list.length - 1 ? "Auswertung" : "Weiter";
-      $("stop").style.display = "none";
+      if (mode === "pruefung") { if (idx === list.length - 1) return review(false); idx++; return render(); }
+      if (locked) { if (idx === list.length - 1) return finish(); idx++; return render(); }
+      if (chosen === null) return;                      // Üben: erst eine Antwort wählen
+      ans[idx] = chosen;
+      render();
     };
   }
+  function refreshGrid() { const g = document.querySelector(".qgrid"); if (g) { g.outerHTML = gridHTML(); document.querySelectorAll(".qgrid .chip").forEach(b => b.onclick = () => { idx = +b.dataset.i; render(); }); } }
 
-  function finish() {
-    clearInterval(timer);
+  // ---------- Übersicht vor der Auswertung (Simulation) ----------
+  function review(fromStop) {
     toTop();
-    $("prog").style.width = "100%";
-    $("count").textContent = "Fertig";
-    $("topic").innerHTML = "";
+    const open = openIdx();
+    if (!open.length && !fromStop) return finish();
+    $("count").textContent = "Fast fertig";
+    $("card").innerHTML = '<h2 style="margin:0">' + (open.length ? open.length + " Fragen sind noch offen" : "Alle Fragen sind beantwortet") + "</h2>" +
+      '<p class="hint">Du kannst jetzt zu einer Frage zurückgehen oder die Simulation auswerten. Offene Fragen zählen dann als nicht gelöst.</p>' +
+      gridHTML() +
+      (open.length ? '<button class="btn" id="to-open">Zur ersten offenen Frage</button>' : "") +
+      '<button class="btn' + (open.length ? " ghost" : "") + '" id="eval">Jetzt auswerten</button>' +
+      '<button class="btn ghost" id="to-last">← Zurück zu den Fragen</button>';
+    document.querySelectorAll(".qgrid .chip").forEach(b => b.onclick = () => { idx = +b.dataset.i; showGrid = false; render(); });
+    if ($("to-open")) $("to-open").onclick = () => { idx = open[0]; showGrid = false; render(); };
+    $("to-last").onclick = () => { render(); };
+    $("eval").onclick = finish;
+  }
+
+  // ---------- Auswertung ----------
+  function finish() {
+    clearInterval(timer); toTop();
+    $("prog").style.width = "100%"; $("count").textContent = "Fertig"; $("topic").innerHTML = "";
+    // Üben: nur beantwortete Fragen zählen. Simulation: offene Fragen zählen als nicht gelöst.
+    const log = list.map((f, i) => ({ f, chosen: ans[i], ok: ans[i] === 0, skipped: ans[i] === null }))
+      .filter(l => mode === "pruefung" || !l.skipped);
     const right = log.filter(l => l.ok).length, total = log.length;
     const wrong = log.filter(l => !l.ok);
     const byTopic = {};
     log.forEach(l => { const t = byTopic[l.f.t] = byTopic[l.f.t] || [0, 0]; t[1]++; if (l.ok) t[0]++; });
-    // Speichern: letzte Runde und wackelnde Fragen
     store.set("last", { date: new Date().toISOString(), right, total });
     let falsch = store.get("falsch", []);
     log.forEach(l => { const h = hash(l.f.q); seen.add(h); falsch = falsch.filter(x => x !== h); if (!l.ok) falsch.push(h); });
@@ -153,17 +195,19 @@
         return "<li>" + (p >= 0.8 ? "🟢" : p >= 0.5 ? "🟡" : "🔴") + " " + t + ": " + r + " von " + n + "</li>";
       }).join("") + "</ul>";
     if (wrong.length) {
-      html += "<p><b>Das war falsch, mit Erklärung:</b></p>" + wrong.map(l =>
+      html += "<p><b>Das war falsch oder offen, mit Erklärung:</b></p>" + wrong.map(l =>
         "<details><summary>" + l.f.q + "</summary><p><b>Richtig:</b> " + l.f.o[0] + "</p>" +
-        (l.chosen !== null ? "<p><b>Deine Antwort:</b> " + l.f.o[l.chosen] + "</p>" : "<p><i>Übersprungen</i></p>") + "<p>" + l.f.why + "</p></details>").join("");
+        (l.chosen !== null ? "<p><b>Deine Antwort:</b> " + l.f.o[l.chosen] + "</p>" : "<p><i>Nicht beantwortet</i></p>") + "<p>" + l.f.why + "</p></details>").join("");
     }
     html += (mode === "ueben" ? '<button class="btn" id="more">Noch ' + RUNDE + " Fragen</button>" : "") +
       (wrong.length ? '<button class="btn ghost" id="again-wrong">Nur die falschen nochmal</button>' : "") +
-      '<button class="btn ghost" id="back">Fertig für heute</button>';
+      (mode === "pruefung" ? '<button class="btn ghost" id="to-review">← Zurück zu den Fragen</button>' : "") +
+      '<button class="btn ghost" id="done">Fertig für heute</button>';
     $("card").innerHTML = html;
     if ($("more")) $("more").onclick = () => start("ueben", nextRound(ALL));
     if (wrong.length) $("again-wrong").onclick = () => start("ueben", shuffle(wrong.map(l => l.f)));
-    $("back").onclick = home;
+    if ($("to-review")) $("to-review").onclick = () => review(true);
+    $("done").onclick = home;
   }
 
   home();
