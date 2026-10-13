@@ -8,7 +8,7 @@
   const KEY = window.MC_KEY || "afa";
   const PRUEFUNG_N = Math.min(28, ALL.length);
   const RUNDE = 10;
-  let sel = new Set(TOPICS);
+  let sel = new Set(TOPICS), recorded = false;
   // Zustand der laufenden Runde
   let mode = "ueben", list = [], orders = [], ans = [], idx = 0, timer = null, t0 = 0, showTime = false, showGrid = false, seen = new Set();
 
@@ -23,6 +23,17 @@
     const days = Math.round((new Date(new Date().toDateString()) - new Date(new Date(d).toDateString())) / 864e5);
     return days <= 0 ? "heute" : days === 1 ? "gestern" : "vor " + days + " Tagen";
   };
+  const qstats = () => store.get("q", {});
+  const stat = f => qstats()[hash(f.q)] || null;
+  function record(f, ok) {
+    const qs = qstats(), h = hash(f.q), e = qs[h] || [0, 0, ""];
+    e[0]++; if (ok) e[1]++; e[2] = ok ? "r" : "w"; qs[h] = e; store.set("q", qs);
+  }
+  const coverage = pool => {
+    const qs = qstats(); let seenN = 0, solid = 0;
+    pool.forEach(f => { const e = qs[hash(f.q)]; if (e) { seenN++; if (e[2] === "r") solid++; } });
+    return { total: pool.length, seen: seenN, solid, never: pool.length - seenN };
+  };
   const answered = () => ans.filter(a => a !== null).length;
   const openIdx = () => ans.map((a, i) => a === null ? i : -1).filter(i => i >= 0);
 
@@ -30,25 +41,33 @@
   function home() {
     clearInterval(timer);
     $("meta").style.display = "none"; $("prog").style.width = "0";
-    const last = store.get("last", null), wrong = store.get("falsch", []);
-    const wrongPool = ALL.filter(f => wrong.includes(hash(f.q)));
+    const last = store.get("last", null), cov = coverage(ALL);
+    const wrongPool = ALL.filter(f => { const e = stat(f); return e && e[2] === "w"; });
+    const perTopic = TOPICS.map(t => { const c = coverage(ALL.filter(f => f.t === t)); return "<li>" + t + ": " + c.seen + " von " + c.total + " gesehen, " + c.solid + " zuletzt richtig</li>"; }).join("");
     const chips = TOPICS.map(t => {
       const n = ALL.filter(f => f.t === t).length;
       return '<button class="chip' + (sel.has(t) ? " on" : "") + '" data-t="' + t + '">' + t + " (" + n + ")</button>";
     }).join("");
     $("card").innerHTML =
       "<h2>Heute üben</h2>" +
+      '<div class="given" style="margin-top:6px"><b>Abdeckung: ' + cov.seen + " von " + cov.total + " Fragen schon gesehen</b>" +
+      '<div class="bar" style="margin:6px 0 4px"><i style="width:' + Math.round(cov.seen / cov.total * 100) + '%"></i></div>' +
+      (cov.never ? "Noch nie gesehen: " + cov.never + ". Die kommen in den Runden zuerst dran." : "Alle Fragen waren schon mindestens einmal dran. Stark!") +
+      " Davon zuletzt richtig: " + cov.solid + ".</div>" +
       (last ? '<p class="hint" style="margin-top:0">Zuletzt geübt: ' + ago(last.date) + ", " + last.right + " von " + last.total + " richtig.</p>" : "") +
       '<button class="btn" id="go-10" style="margin-top:6px">' + RUNDE + " Fragen, gemischt</button>" +
       (wrongPool.length ? '<button class="btn ghost" id="go-wrong">' + wrongPool.length + " Fragen, die noch wackeln</button>" : "") +
       '<p class="hint">Nach jeder Frage siehst du sofort, ob sie stimmt. Du kannst jederzeit aufhören oder zurückgehen.</p>' +
+      "<details><summary>Wie weit bin ich? (nach Themen)</summary><ul class=\"weak\">" + perTopic + "</ul></details>" +
       "<details><summary>Themen auswählen</summary>" +
       '<div class="chips" id="chips">' + chips + "</div>" +
       '<p class="hint"><button class="chip" id="all">Alle</button> <button class="chip" id="none">Keine</button></p>' +
       '<button class="btn" id="go-themen">Mit diesen Themen üben</button></details>' +
       "<details><summary>Prüfungs-Simulation (" + PRUEFUNG_N + " Fragen)</summary>" +
       "<p>Hier gibt es keine Note, du übst nur. Das Ergebnis kommt erst am Ende, so wie in der Prüfung. Du kannst Fragen überspringen, zurückgehen und offene Fragen später beantworten. In der echten Prüfung hast du 105 Minuten für Teil A und Teil B zusammen. Für Teil A kannst du etwa 45 Minuten rechnen.</p>" +
-      '<button class="btn ghost" id="go-pruef">Simulation starten</button></details>';
+      '<button class="btn ghost" id="go-pruef">Simulation starten</button></details>' +
+      '<details><summary>Sicherung</summary><div id="bk"></div></details>';
+    if (window.KaiBackup) window.KaiBackup.mount($("bk")); else $("bk").textContent = "Sicherung nicht verfügbar.";
     document.querySelectorAll("#chips .chip").forEach(b => b.onclick = () => {
       sel.has(b.dataset.t) ? sel.delete(b.dataset.t) : sel.add(b.dataset.t);
       b.classList.toggle("on");
@@ -65,16 +84,20 @@
     $("go-pruef").onclick = () => start("pruefung", shuffle(ALL).slice(0, PRUEFUNG_N));
   }
 
-  // nächste Runde: bevorzugt Fragen, die in dieser Sitzung noch nicht dran waren
+  // nächste Runde: nie gesehene Fragen zuerst, dann zuletzt falsch, dann nur einmal richtig, dann der Rest
   function nextRound(pool) {
-    let fresh = pool.filter(f => !seen.has(hash(f.q)));
-    if (fresh.length < RUNDE) { seen = new Set(); fresh = pool; }
-    return shuffle(fresh).slice(0, RUNDE);
+    let cand = pool.filter(f => !seen.has(hash(f.q)));
+    if (cand.length < RUNDE) { seen = new Set(); cand = pool; }
+    const grp = [[], [], [], []];
+    cand.forEach(f => { const e = stat(f); grp[!e ? 0 : e[2] === "w" ? 1 : e[1] < 2 ? 2 : 3].push(f); });
+    let out = [];
+    for (const g of grp) { out = out.concat(shuffle(g)); if (out.length >= RUNDE) break; }
+    return out.slice(0, RUNDE);
   }
 
   function start(m, items) {
     mode = m; list = items; idx = 0; showGrid = false;
-    ans = items.map(() => null);
+    ans = items.map(() => null); recorded = false;
     orders = items.map(() => shuffle([0, 1, 2, 3, 4]));
     $("meta").style.display = "";
     clearInterval(timer);
@@ -141,7 +164,7 @@
       if (mode === "pruefung") { if (idx === list.length - 1) return review(false); idx++; return render(); }
       if (locked) { if (idx === list.length - 1) return finish(); idx++; return render(); }
       if (chosen === null) return;                      // Üben: erst eine Antwort wählen
-      ans[idx] = chosen;
+      ans[idx] = chosen; record(list[idx], chosen === 0);
       render();
     };
   }
@@ -177,9 +200,8 @@
     const byTopic = {};
     log.forEach(l => { const t = byTopic[l.f.t] = byTopic[l.f.t] || [0, 0]; t[1]++; if (l.ok) t[0]++; });
     store.set("last", { date: new Date().toISOString(), right, total });
-    let falsch = store.get("falsch", []);
-    log.forEach(l => { const h = hash(l.f.q); seen.add(h); falsch = falsch.filter(x => x !== h); if (!l.ok) falsch.push(h); });
-    store.set("falsch", falsch);
+    log.forEach(l => seen.add(hash(l.f.q)));
+    if (mode === "pruefung" && !recorded) { log.forEach(l => { if (!l.skipped) record(l.f, l.ok); }); recorded = true; }
     const pct = total ? right / total : 0;
     const verdict = pct === 1 ? "Alles richtig. Stark!" : pct >= 0.75 ? "Gut. Nur noch ein paar Lücken." : pct >= 0.5 ? "Gute Basis. Diese Themen lohnen sich zu wiederholen." : "Hier gibt es noch viel Luft nach oben. Mach weiter, jede Runde hilft.";
     let best = "";
