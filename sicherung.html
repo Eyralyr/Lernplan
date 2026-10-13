@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fortschritt sichern</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <p class="sub"><a href="index.html">← Zur Übersicht</a></p>
+  <h1>Fortschritt sichern</h1>
+  <p class="sub">Alles, was du geübt hast, merkt sich dein Browser. Mit einem Sicherungstext kannst du es in Notion aufbewahren und auf jedem Gerät wieder einlesen.</p>
+  <div class="card" style="margin-top:0">
+    <h2>So geht's</h2>
+    <ol>
+      <li><b>Sichern:</b> „Sicherung erstellen“ tippen, dann „Text kopieren“. Den Text einmal pro Woche in Notion einfügen (Seite „Weg zum Abschluss“, Abschnitt „Meine Sicherung“).</li>
+      <li><b>Wiederherstellen:</b> Den Text aus Notion in das Feld einfügen und „Text einlesen“ tippen. Dann ein zweites Mal tippen, um zu bestätigen.</li>
+    </ol>
+    <div id="bk"></div>
+  </div>
+</main>
+<script src="assets/backup.js"></script>
+<script>window.KaiBackup.mount(document.getElementById("bk"));</script>
+</body>
+</html>
