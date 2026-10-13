@@ -69,3 +69,8 @@ svg.iso{max-height:70vh}
 .chip{min-height:44px}
 .btn{min-height:44px}
 select{min-height:44px}
+.nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.nav .btn{margin:8px 0 0}
+.qgrid{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.qgrid .chip{min-width:44px;padding:6px 10px;text-align:center}
+.chip.cur{box-shadow:0 0 0 2px var(--accent)}
