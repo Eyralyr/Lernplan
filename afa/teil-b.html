@@ -74,37 +74,62 @@ const ITEMS = [
     key: ["<b>1. Formel</b> hinschreiben (z. B. p = F : A).", "<b>2. Ansatz:</b> Zahlen mit Einheiten einsetzen.", "<b>3. Ergebnis</b> ausrechnen.", "<b>4. Einheit</b> dazuschreiben, ohne Einheit gibt es Abzug.", "Außerdem: Verwendete Tabellenbücher oben auf dem Heft eintragen. Zwischenergebnisse nicht zu früh runden."] },
 ];
 
-let list = [], idx = 0, had = 0, done = 0;
-function start() { list = shuffle(ITEMS); idx = 0; had = 0; done = 0; render(); }
+let list = [], idx = 0, rate = [], shown = [];   // rate[i]: "good" | "bad" | null (offen), shown[i]: Musterlösung geöffnet?
+function start(items) { list = items; idx = 0; rate = items.map(() => null); shown = items.map(() => false); render(); }
+const count = r => rate.filter(x => x === r).length;
 
 function render() {
-  if (idx >= list.length) return finish();
   window.scrollTo(0, 0);
   const it = list[idx];
   $("count").textContent = "Aufgabe " + (idx + 1) + " von " + list.length;
-  $("stat").textContent = done ? had + " von " + done + " gut" : "";
-  $("prog").style.width = (idx / list.length * 100) + "%";
+  $("stat").textContent = count("good") + count("bad") ? count("good") + " von " + (count("good") + count("bad")) + " gut" : "";
+  $("prog").style.width = ((count("good") + count("bad")) / list.length * 100) + "%";
+  const last = idx === list.length - 1;
   $("card").innerHTML = '<span class="tag">' + it.t + '</span><p class="q">' + it.q + '</p>' +
     '<p class="hint">Schreib deine Antwort auf Papier, Stichworte genügen. Erst danach die Musterlösung öffnen.</p>' +
+    '<div id="sol"></div>' +
+    '<div class="nav">' + (idx > 0 ? '<button class="btn ghost" id="prev">← Zurück</button>' : "") +
     '<button class="btn" id="reveal">Musterlösung anzeigen</button>' +
-    '<button class="btn ghost" id="skip">Überspringen</button><div id="sol"></div>';
-  $("skip").onclick = () => { idx++; render(); };
-  $("reveal").onclick = () => {
-    const body = it.ordered ? "<ol>" + it.key.map(k => "<li>" + k + "</li>").join("") + "</ol>" : it.key.map(k => k.startsWith("<table") || k.startsWith("<svg") ? k : "<p style=\"margin:6px 0\">" + k + "</p>").join("");
-    $("sol").innerHTML = '<div class="key"><b>Musterlösung (Stichworte)</b>' + body + '</div><p class="hint">Wie gut war deine Antwort?</p>' +
-      '<button class="btn" id="good">Das meiste hatte ich</button><button class="btn ghost" id="bad">Nochmal anschauen</button>';
-    $("reveal").style.display = "none"; $("skip").style.display = "none";
-    $("good").onclick = () => { had++; done++; idx++; render(); };
-    $("bad").onclick = () => { done++; list.push(it); idx++; render(); };
-  };
+    '<button class="btn ghost" id="next">' + (last ? "Zur Übersicht →" : "Überspringen →") + '</button></div>' +
+    '<p><button class="chip" id="stop">Beenden und auswerten</button></p>';
+  if (idx > 0) $("prev").onclick = () => { idx--; render(); };
+  $("stop").onclick = finish;
+  $("next").onclick = () => { if (last) finish(); else { idx++; render(); } };
+  $("reveal").onclick = () => { shown[idx] = true; showSol(); };
+  if (shown[idx]) showSol();
+}
+
+function showSol() {
+  const it = list[idx], last = idx === list.length - 1;
+  const body = it.ordered ? "<ol>" + it.key.map(k => "<li>" + k + "</li>").join("") + "</ol>" : it.key.map(k => k.startsWith("<table") || k.startsWith("<svg") ? k : "<p style=\"margin:6px 0\">" + k + "</p>").join("");
+  const r = rate[idx];
+  $("sol").innerHTML = '<div class="key"><b>Musterlösung (Stichworte)</b>' + body + '</div><p class="hint">Wie gut war deine Antwort?' + (r ? " Bisher: " + (r === "good" ? "das meiste gehabt." : "nochmal anschauen.") : "") + '</p>' +
+    '<button class="btn' + (r === "good" ? "" : " ghost") + '" id="good">Das meiste hatte ich</button><button class="btn' + (r === "bad" ? "" : " ghost") + '" id="bad">Nochmal anschauen</button>';
+  $("reveal").style.display = "none";
+  const go = () => { if (last) finish(); else { idx++; render(); } };
+  $("good").onclick = () => { rate[idx] = "good"; go(); };
+  $("bad").onclick = () => { rate[idx] = "bad"; go(); };
+  $("next").textContent = last ? "Zur Übersicht →" : "Weiter →";
 }
 
 function finish() {
-  $("prog").style.width = "100%"; $("count").textContent = "Fertig";
-  $("card").innerHTML = '<h2 style="margin:0">Geschafft</h2><div class="score">' + had + ' von ' + done + '</div><p>So viele Aufgaben hast du dir gut gemerkt. Was nicht saß, schaust du in ein paar Tagen nochmal an.</p><button class="btn" id="again">Nochmal von vorn</button>';
-  $("again").onclick = start;
+  window.scrollTo(0, 0);
+  const good = count("good"), bad = count("bad"), open = count(null);
+  $("count").textContent = "Übersicht"; $("prog").style.width = "100%";
+  const todo = list.map((it, i) => rate[i] !== "good" ? it : null).filter(Boolean);
+  $("card").innerHTML = '<h2 style="margin:0">Geschafft</h2><div class="score">' + good + ' von ' + list.length + '</div>' +
+    '<p>' + good + ' Aufgaben hattest du gut' + (bad ? ', ' + bad + ' möchtest du nochmal anschauen' : '') + (open ? ', ' + open + ' sind noch offen' : '') + '.</p>' +
+    '<div class="qgrid">' + list.map((it, i) => '<button class="chip' + (rate[i] === "good" ? " on" : "") + '" data-i="' + i + '" aria-label="Aufgabe ' + (i + 1) + '">' + (i + 1) + (rate[i] === null ? "" : rate[i] === "good" ? " ✓" : " ↻") + '</button>').join("") + '</div>' +
+    '<p class="hint">✓ = gut, ↻ = nochmal anschauen, ohne Zeichen = noch offen. Tippe auf eine Nummer, um die Aufgabe zu öffnen.</p>' +
+    (todo.length ? '<button class="btn" id="redo">' + todo.length + ' Aufgaben nochmal ansehen</button>' : '') +
+    '<button class="btn ghost" id="back">← Zurück zu den Aufgaben</button>' +
+    '<button class="btn ghost" id="again">Alle von vorn</button>';
+  document.querySelectorAll(".qgrid .chip").forEach(b => b.onclick = () => { idx = +b.dataset.i; render(); });
+  if (todo.length) $("redo").onclick = () => start(todo);
+  $("back").onclick = () => render();
+  $("again").onclick = () => start(shuffle(ITEMS));
 }
-start();
+start(shuffle(ITEMS));
 </script>
 </body>
 </html>

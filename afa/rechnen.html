@@ -175,12 +175,13 @@ const KINDS = [
   } },
 ];
 
-let cur = null, curKind = null, right = 0, total = 0, done = false;
+let hist = [], pos = -1, right = 0, total = 0, curKind = null;   // hist: alle gezeigten Aufgaben, pos: aktuelle
 KINDS.forEach(k => { const o = document.createElement("option"); o.value = k.id; o.textContent = k.name; $("sel").appendChild(o); });
 const allOpt = document.createElement("option"); allOpt.value = "mix"; allOpt.textContent = "Alles gemischt"; $("sel").insertBefore(allOpt, $("sel").firstChild);
 $("sel").value = "mix";
-$("sel").onchange = () => next();
+$("sel").onchange = () => next(false);
 
+// neue Aufgabe erzeugen und anzeigen
 function next(sameKind) {
   if (!(sameKind && curKind)) {
     if ($("sel").value === "mix") {
@@ -188,54 +189,73 @@ function next(sameKind) {
       curKind = k;
     } else curKind = KINDS.find(k => k.id === $("sel").value);
   }
-  cur = curKind.gen(); done = false; show();
+  hist.push({ kind: curKind, c: curKind.gen(), done: false });
+  pos = hist.length - 1; show();
+}
+// in der Verlaufsliste vor- oder zurückgehen
+function goBack() { if (pos > 0) { pos--; curKind = hist[pos].kind; show(); } }
+function goForward() { if (pos < hist.length - 1) { pos++; curKind = hist[pos].kind; show(); } else next(false); }
+
+function feedback(e) {
+  const c = e.c, ok = e.ok, v = e.v;
+  let head, extra = "";
+  if (ok) head = "✅ Richtig: " + fmt(c.ans, 2) + " " + c.unit;
+  else {
+    head = "❌ Nicht ganz. Dein Wert: " + (isNaN(v) ? "keine Zahl" : fmt(v, 3)) + ". Richtig ist " + fmt(c.ans, 2) + " " + c.unit + ".";
+    if (!isNaN(v) && v > 0 && c.ans > 0) {
+      const r = v / c.ans, near = x => Math.abs(r / x - 1) < 0.03;
+      if (near(1000) || near(0.001)) extra = "<p>Der Wert ist um den Faktor 1000 daneben. Fehlt eine Umrechnung (z. B. N → kN, W → kW, mm → m, L → m³)?</p>";
+      else if (near(10) || near(0.1)) extra = "<p>Der Wert ist um den Faktor 10 daneben. Schau nochmal auf Kommastellen und Einheiten.</p>";
+      else if (near(60) || near(1 / 60)) extra = "<p>Der Wert ist um den Faktor 60 daneben. Sekunden und Minuten verwechselt?</p>";
+    }
+  }
+  const steps = "<ol>" + c.steps.map(s => "<li>" + s + "</li>").join("") + "</ol>";
+  return '<div class="fb ' + (ok ? "ok" : "bad") + '"><b>' + head + "</b>" + extra +
+    (ok ? "<details><summary>Lösungsweg ansehen</summary>" + steps + "</details>" : "<b style=\"margin-top:8px\">Lösungsweg</b>" + steps) + "</div>";
 }
 
 function show() {
-  const c = cur;
+  const e = hist[pos], c = e.c, atEnd = pos === hist.length - 1;
   $("card").innerHTML =
-    '<span class="tag">' + curKind.name + "</span>" +
+    '<span class="tag">' + e.kind.name + "</span>" +
     '<p class="q">' + c.q + "</p>" +
     '<div class="given"><b>Gegeben:</b><ul>' + c.given.map(g => "<li>" + g + "</li>").join("") + "</ul></div>" +
     '<p class="q"><b>Gesucht:</b> ' + c.ask + "</p>" +
     '<div class="num"><input id="inp" inputmode="' + (c.ans < 0 ? "text" : "decimal") + '" autocomplete="off" placeholder="Ergebnis eingeben"><span>' + c.unit + "</span></div>" +
     '<p class="hint">Tippe die Zahl ohne Tausenderpunkt ein, z. B. 1500,5. Komma oder Punkt als Dezimalzeichen geht beide. Runde auf 1 bis 2 Nachkommastellen.</p>' +
     "<details><summary>Tipp: Formel und Vorgehen</summary><p>" + c.tip + "</p></details>" +
-    '<button class="btn" id="check" disabled>Prüfen</button><div id="fb"></div>';
+    '<div class="nav">' + (pos > 0 ? '<button class="btn ghost" id="prev">← Zurück</button>' : "") +
+    (e.done ? "" : '<button class="btn" id="check" disabled>Prüfen</button>') +
+    (e.done ? (atEnd ? '<button class="btn" id="n1">Weiter mit neuen Zahlen</button><button class="btn ghost" id="n2">Andere Aufgabenart</button>' : '<button class="btn" id="fw">Weiter →</button>')
+            : '<button class="btn ghost" id="skip">Überspringen →</button>') + "</div>" +
+    '<div id="fb">' + (e.done ? feedback(e) : "") + "</div>";
   const inp = $("inp");
-  inp.oninput = () => { $("check").disabled = inp.value.trim() === ""; };
-  inp.onkeydown = e => { if (e.key === "Enter" && !$("check").disabled) $("check").click(); };
-  $("check").onclick = check;
+  if (e.done) { inp.value = e.text; inp.disabled = true; }
+  else {
+    inp.value = e.text || "";
+    $("check").disabled = inp.value.trim() === "";
+    inp.oninput = () => { e.text = inp.value; $("check").disabled = inp.value.trim() === ""; };
+    inp.onkeydown = ev => { if (ev.key === "Enter" && !$("check").disabled) $("check").click(); };
+    $("check").onclick = check;
+    $("skip").onclick = goForward;
+  }
+  if ($("prev")) $("prev").onclick = goBack;
+  if ($("fw")) $("fw").onclick = goForward;
+  if ($("n1")) $("n1").onclick = () => next($("sel").value === "mix" ? false : true);
+  if ($("n2")) $("n2").onclick = () => next(false);
+  if ($("n1")) $("n1").focus();
+  const skipped = hist.filter((h, i) => !h.done && i !== pos).length;
+  $("stat").textContent = (total ? right + " von " + total + " richtig in dieser Runde." : "Noch nichts gerechnet.") + (skipped ? " Übersprungen: " + skipped + "." : "");
 }
 
 function check() {
-  if (done) return;
+  const e = hist[pos], c = e.c;
+  if (e.done) return;
   const v = parseFloat($("inp").value.replace(/\s/g, "").replace(",", "."));
-  const tol = cur.tolAbs !== undefined ? cur.tolAbs : Math.abs(cur.ans) * (cur.tolRel || 0.015);
-  const ok = !isNaN(v) && Math.abs(v - cur.ans) <= tol;
-  done = true; total++; if (ok) right++;
-  $("inp").disabled = true; $("check").style.display = "none";
-  let head, extra = "";
-  if (ok) head = "✅ Richtig: " + fmt(cur.ans, 2) + " " + cur.unit;
-  else {
-    head = "❌ Nicht ganz. Dein Wert: " + (isNaN(v) ? "keine Zahl" : fmt(v, 3)) + ". Richtig ist " + fmt(cur.ans, 2) + " " + cur.unit + ".";
-    if (!isNaN(v) && v > 0 && cur.ans > 0) {
-      const r = v / cur.ans;
-      const near = (x) => Math.abs(r / x - 1) < 0.03;
-      if (near(1000) || near(0.001)) extra = "<p>Der Wert ist um den Faktor 1000 daneben. Fehlt eine Umrechnung (z. B. N → kN, W → kW, mm → m, L → m³)?</p>";
-      else if (near(10) || near(0.1)) extra = "<p>Der Wert ist um den Faktor 10 daneben. Schau nochmal auf Kommastellen und Einheiten.</p>";
-      else if (near(60) || near(1 / 60)) extra = "<p>Der Wert ist um den Faktor 60 daneben. Sekunden und Minuten verwechselt?</p>";
-    }
-  }
-  const steps = "<ol>" + cur.steps.map(s => "<li>" + s + "</li>").join("") + "</ol>";
-  $("fb").innerHTML = '<div class="fb ' + (ok ? "ok" : "bad") + '"><b>' + head + "</b>" + extra +
-    (ok ? "<details><summary>Lösungsweg ansehen</summary>" + steps + "</details>" : "<b style=\"margin-top:8px\">Lösungsweg</b>" + steps) + "</div>" +
-    '<button class="btn" id="n1">Weiter mit neuen Zahlen</button>' +
-    '<button class="btn ghost" id="n2">Andere Aufgabenart</button>';
-  $("n1").onclick = () => next($("sel").value === "mix" ? false : true);
-  $("n2").onclick = () => next(false);
-  $("n1").focus();
-  $("stat").textContent = right + " von " + total + " richtig in dieser Runde.";
+  const tol = c.tolAbs !== undefined ? c.tolAbs : Math.abs(c.ans) * (c.tolRel || 0.015);
+  e.ok = !isNaN(v) && Math.abs(v - c.ans) <= tol; e.v = v; e.text = $("inp").value; e.done = true;
+  total++; if (e.ok) right++;
+  show();
 }
 
 next();
