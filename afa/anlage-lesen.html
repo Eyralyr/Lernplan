@@ -9,76 +9,107 @@
   table{border-collapse:collapse;width:100%;font-size:.92rem}
   th,td{border:1px solid var(--line);padding:4px 8px;text-align:left}
   th{background:var(--accent-soft)}
-  .sec{margin:14px 0 4px;font-weight:700}
+  ul.leg{padding-left:20px;margin:6px 0}
+  ul.leg li{margin:4px 0;font-size:.95rem}
+  .kenn td:first-child{font-weight:700;white-space:nowrap}
+  details.step>summary{font-size:1.02rem}
+  .when{color:var(--muted);font-size:.9rem;margin:2px 0 6px}
 </style>
 </head>
 <body>
 <main>
   <p class="sub"><a href="../index.html">← Zur Übersicht</a></p>
   <h1>Anlage lesen</h1>
-  <p class="sub">In der Prüfung stehen die Antworten oft in den Unterlagen: Datenblatt, Fließschema, Stückliste. Hier übst du, die richtigen Angaben zu finden. Lies erst die Unterlagen, dann beantworte die Fragen.</p>
+  <p class="sub">Vier Blöcke mit Anlagen, die von Block zu Block schwieriger werden. Öffne die Unterlagen Schritt für Schritt, dann die Fragen darunter. Schau erst in die Unterlagen, wenn du sie für eine Frage brauchst.</p>
 
-  <div class="card" style="margin-top:0">
-    <h2>Mini-Anlage: Wasserbehälter mit Pumpe</h2>
-    <p>Aus dem Behälter BE01 fördert die Pumpe PL01 Wasser zu einem Verbraucher. Alle Daten sind erfunden.</p>
+  <div class="chips" id="pick"></div>
 
-    <p class="sec">Fließschema (vereinfacht, Kästchen statt Norm-Symbole)</p>
-    <svg class="iso" viewBox="0 0 700 190" role="img" aria-label="Fließschema der Mini-Anlage" style="max-height:none">
-      <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="currentColor" style="color:var(--text)"/></marker></defs>
-      <g font-size="12" style="font-family:inherit">
-        <rect x="10" y="60" width="90" height="90" rx="8" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/>
-        <text x="55" y="100" text-anchor="middle" style="fill:var(--text)">BE01</text><text x="55" y="116" text-anchor="middle" style="fill:var(--muted)">Behälter</text>
-        <path d="M100 135 H140" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
-        <rect x="140" y="120" width="60" height="30" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="170" y="139" text-anchor="middle" style="fill:var(--text)">VV01</text>
-        <path d="M200 135 H235" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
-        <rect x="235" y="120" width="60" height="30" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="265" y="139" text-anchor="middle" style="fill:var(--text)">FL01</text>
-        <path d="M295 135 H330" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
-        <circle cx="355" cy="135" r="24" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="355" y="139" text-anchor="middle" style="fill:var(--text)">PL01</text>
-        <path d="M379 135 H410" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
-        <rect x="410" y="120" width="60" height="30" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="440" y="139" text-anchor="middle" style="fill:var(--text)">VH01</text>
-        <path d="M470 135 H505" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
-        <rect x="505" y="120" width="60" height="30" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="535" y="139" text-anchor="middle" style="fill:var(--text)">VV02</text>
-        <path d="M565 135 H600" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
-        <rect x="600" y="105" width="90" height="60" rx="8" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="645" y="132" text-anchor="middle" style="fill:var(--text)">Verbraucher</text><text x="645" y="148" text-anchor="middle" style="fill:var(--muted)">TAH 02</text>
-        <path d="M55 20 V60" stroke="currentColor" style="color:var(--text)" stroke-width="2" marker-end="url(#ar)" fill="none"/>
-        <rect x="30" y="2" width="50" height="22" rx="4" fill="none" stroke="currentColor" style="color:var(--text)" stroke-width="2"/><text x="55" y="17" text-anchor="middle" style="fill:var(--text)">VC01</text>
-        <text x="95" y="38" style="fill:var(--muted)">Zulauf, geregelt über LIC 01 am Behälter</text>
-      </g>
-    </svg>
-    <p class="hint">Die Pfeile zeigen die Strömungsrichtung. VV = Absperrarmatur, VH = Rückflussverhinderer (Sicherungsarmatur), VC = Regelarmatur, FL = Filter, PL = Pumpe, BE = Behälter. LIC = Füllstand anzeigen und regeln, TAH = Temperatur-Alarm bei zu hohem Wert.</p>
-
-    <p class="sec">Daten</p>
-    <table>
-      <tr><th colspan="2">Behälter BE01</th></tr>
-      <tr><td>Nennvolumen</td><td>1200 L</td></tr>
-      <tr><td>Füllvolumen im Betrieb</td><td>900 L</td></tr>
-      <tr><td>Masse leer</td><td>310 kg</td></tr>
-      <tr><td>Medium: Wasser, Dichte</td><td>1,0 kg/dm³</td></tr>
-      <tr><th colspan="2">Pumpe PL01</th></tr>
-      <tr><td>Aufgenommene elektrische Leistung</td><td>750 W</td></tr>
-      <tr><td>Motorwirkungsgrad / Pumpenwirkungsgrad</td><td>90 % / 60 %</td></tr>
-      <tr><td>Förderstrom</td><td>6 m³/h</td></tr>
-    </table>
-
-    <p class="sec">Stückliste</p>
-    <table>
-      <tr><th>Pos.</th><th>Stück</th><th>Benennung</th><th>Norm / Maß</th><th>Werkstoff</th></tr>
-      <tr><td>1</td><td>1</td><td>Behälter BE01</td><td>1200 L</td><td>1.4571</td></tr>
-      <tr><td>2</td><td>2</td><td>Vorschweißflansch DN50 PN16</td><td>EN 1092-1</td><td>1.4571</td></tr>
-      <tr><td>3</td><td>1</td><td>Rohr, gerade</td><td>60,3 × 2,9 – 1500</td><td>1.4571</td></tr>
-      <tr><td>4</td><td>2</td><td>Bogen 90°</td><td>60,3 × 2,9</td><td>1.4571</td></tr>
-      <tr><td>5</td><td>8</td><td>Sechskantschraube</td><td>M16 × 60</td><td>A2-70</td></tr>
-      <tr><td>6</td><td>2</td><td>Flachdichtung</td><td>DN50 PN16</td><td>Graphit</td></tr>
-    </table>
+  <div class="card" id="docs">
+    <h2 id="b-title"></h2>
+    <p id="b-desc"></p>
+    <div id="b-body"></div>
   </div>
 
   <div class="meta" id="meta" style="display:none;margin-top:16px"><span id="count"></span><span id="topic"></span></div>
   <div class="bar"><i id="prog"></i></div>
   <div class="card" id="card"></div>
+  <p class="hint">Alle Anlagen und Zahlen sind frei erfunden. Die Symbole sind für die Übung vereinfacht, in deiner Prüfung sehen sie etwas anders aus.</p>
 </main>
-<script>window.MC_KEY = "anlage"; window.MC_SCROLL = "meta";</script>
-<script src="anlage-fragen.js"></script>
+<button class="fab" id="toDocs" type="button">↑ Unterlagen</button>
+
+<script>window.MC_MANUAL = true; window.MC_SCROLL = "meta";</script>
+<script src="../assets/qhelp.js"></script>
+<script src="../assets/ri-draw.js"></script>
+<script src="../assets/vessel-draw.js"></script>
+<script src="anlage-b1.js"></script>
+<script src="anlage-b2.js"></script>
+<script src="anlage-b3.js"></script>
+<script src="anlage-b4.js"></script>
 <script src="../assets/backup.js"></script>
 <script src="../assets/mc.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const BLOCKS = [window.ANLAGE_B1, window.ANLAGE_B2, window.ANLAGE_B3, window.ANLAGE_B4];
+  const L = {
+    be: "Behälter (BE): abgerundeter Kasten mit Nummer, z. B. BE01 = Behälter 1. Ein BE steht meist liegend. Apparate wie die Separatoren (SB) stehen aufrecht.",
+    sb: "SB = Apparat. Hier der Elektrolyseur (großer Kasten) und die Separatoren (stehende Behälter), in denen Gas und Flüssigkeit getrennt werden.",
+    pumpe: "Kreis mit Dreieck = Pumpe (PL). Das Dreieck zeigt in Förderrichtung. Alle Pumpenarten sind gleich gezeichnet (vereinfacht).",
+    vv: "Zwei Dreiecke = Absperrarmatur (VV). Sie sperrt die Leitung ganz ab oder gibt sie frei.",
+    vh: "Dreieck mit Strich an der Spitze = Rückflussverhinderer, auch Rückschlagventil (VH). Er lässt nur in Richtung des Dreiecks durch (vereinfacht).",
+    vc: "Zwei Dreiecke mit Halbkreis daneben oder darüber = Regelarmatur (VC). Der Halbkreis ist der Stellantrieb. Die gestrichelte Linie zeigt, welche Messstelle sie stellt.",
+    sv: "Zwei Dreiecke mit Zickzack = Sicherheitsventil (SV, in der Prüfung heißen Sicherheitsarmaturen VY). Das Zickzack ist die Feder. Das Ventil öffnet bei Überdruck. Wohin es abbläst, steht nur dort, wo eine Leitung eingezeichnet ist.",
+    fl: "Kasten mit Diagonale = Filter (FL).",
+    wt: "Kasten mit Zickzack = Wärmetauscher (WT). Das zweite Medium kommt oben und unten dazu (Kühlwasser ein und aus).",
+    pce: "Kreis mit Strich = PCE-Stelle (PCE = Messen, Steuern, Regeln). Oben stehen Messgröße und Funktion, unten die Nummer. Erster Buchstabe: L Füllstand, P Druck, T Temperatur, F Durchfluss, Q Qualität (z. B. pH). Weitere Buchstaben: I anzeigen, C regeln, S schalten. Beispiele: LI = Füllstand anzeigen, PIC = Druck anzeigen und regeln, QIC = Qualität anzeigen und regeln, LS = Füllstand schalten, FI = Durchfluss anzeigen. AL steht neben dem Kreis = Alarm bei zu niedrigem Wert (Low), AH = Alarm bei zu hohem Wert (High). Das ist vereinfacht, nach Norm schreibt man zusammen, z. B. LAL oder PAH. Eine dünne Linie führt zur Messstelle.",
+    sig: "Gestrichelte dünne Linie mit Pfeilspitze = Signalleitung. Sie zeigt, welche Messstelle welche Armatur oder Pumpe beeinflusst (Regelkreis oder Abschaltung). Die Pfeilspitze zeigt auf die beeinflusste Stelle.",
+    arrow: "Kleines ausgefülltes Dreieck auf der Leitung = Strömungsrichtung.",
+    ext: "Großer Pfeil am Rand = Anschluss nach außen (Zulauf oder Ablauf)."
+  };
+  const sec = (n, t, hint, body, open) => '<details class="step"' + (open ? " open" : "") + "><summary>" + n + " · " + t + "</summary>" + (hint ? '<p class="when">' + hint + "</p>" : "") + body + "</details>";
+
+  function docs(b, i) {
+    let h = "";
+    h += sec(1, "Beschreibung und Kenndaten", "", "<p>" + b.text + "</p>" + '<div class="tw"><table class="kenn">' + b.kenn.map(r => "<tr><td>" + r[0] + "</td>" + r.slice(1).map(c => "<td>" + c + "</td>").join("") + "</tr>").join("") + "</table></div>", true);
+    h += sec(2, "Fließbild", "Das Bild lässt sich seitlich wischen.",
+      '<div class="scroll">' + RIDraw.render(b.ri) + "</div>" +
+      "<details" + (i <= 1 ? " open" : "") + "><summary>Zeichenerklärung</summary><ul class=\"leg\">" + b.legend.map(k => "<li>" + L[k] + "</li>").join("") + "<li>Kürzel: BE Behälter, SB Apparat, PL Pumpe, VV Absperrarmatur, VH Rückflussverhinderer, VC Regelarmatur, SV Sicherheitsventil, FL Filter, WT Wärmetauscher, LP Leitung (mit Nennweite DN). Die Leitungen ohne Anzeige sind hier nicht gezeichnet.</li></ul></details>" +
+      "<details><summary>Leitungsliste (Medien)</summary>" + RIDraw.pipeTable(b.pipes) + "</details>", true);
+    if (b.vessel) {
+      h += sec(3, "Behälterzeichnung", "Brauchst du für die Fragen zur Behälterzeichnung, zu Stutzen und Maßen.",
+        '<p class="hint">' + (b.vessel.views.length > 1 ? "Projektionsmethode 1: Die Draufsicht liegt unter der Vorderansicht, die Ansicht von links rechts daneben. " : "") + 'Gestrichelte Linien sind verdeckte Kanten. Maße in mm. Das Bild lässt sich seitlich wischen.</p><div class="scroll">' + VesselDraw.render(b.vessel) + "</div>");
+      h += sec(4, "Stutzentabelle und Stückliste", "Brauchst du für Fragen zu Nennweiten, Stückzahlen und Werkstoffen. PN 16 bedeutet Nenndruck 16 bar, 1.4571 ist ein Edelstahl. „Ø 800 × 6 – 1400“ heißt Außendurchmesser 800 mm, Wanddicke 6 mm, Länge 1400 mm.",
+        "<p class=\"sec\"><b>Stutzentabelle</b></p>" + VesselDraw.nozzleTable(b.nozzles) + "<p class=\"sec\"><b>Stückliste</b></p>" + VesselDraw.partsList(b.parts));
+    } else if (b.parts) {
+      h += sec(3, b.partsTitle || "Stückliste", "Brauchst du für Fragen zu Stückzahlen, Maßen und Werkstoffen.", VesselDraw.partsList(b.parts));
+    }
+    return h;
+  }
+
+  const COUNT = BLOCKS.map(b => b.questions().length);
+  $("pick").innerHTML = BLOCKS.map((b, i) => '<button class="chip big" data-i="' + i + '">' + (i + 1) + " · " + b.level + " (" + COUNT[i] + ")</button>").join("");
+  function choose(i) {
+    const b = BLOCKS[i];
+    document.querySelectorAll("#pick .chip").forEach((c, k) => c.classList.toggle("on", k === i));
+    $("b-title").textContent = b.title; $("b-desc").textContent = b.desc;
+    $("b-body").innerHTML = docs(b, i);
+    window.FRAGEN = b.questions();
+    window.MC_KEY = i === 0 ? "anlage" : "anlage-b" + (i + 1);
+    window.MC_NEXT = i < BLOCKS.length - 1 ? () => { choose(i + 1); $("docs").scrollIntoView(); } : null;
+    window.MC_NEXT_LABEL = "Weiter zu Block " + (i + 2) + " →";
+    try { history.replaceState(null, "", "#" + (i + 1)); } catch (e) {}
+    window.MCInit();
+  }
+  document.querySelectorAll("#pick .chip").forEach(c => c.onclick = () => choose(+c.dataset.i));
+  // Knopf springt zu den Unterlagen und merkt sich, wo die Frage war
+  let backY = null;
+  $("toDocs").onclick = () => {
+    if (backY === null) { backY = window.scrollY; $("docs").scrollIntoView({ behavior: "smooth" }); $("toDocs").textContent = "↓ Zurück zur Frage"; }
+    else { window.scrollTo({ top: backY, behavior: "smooth" }); backY = null; $("toDocs").textContent = "↑ Unterlagen"; }
+  };
+  const h = parseInt((location.hash || "").slice(1), 10);
+  choose(h >= 1 && h <= BLOCKS.length ? h - 1 : 0);
+})();
+</script>
 </body>
 </html>

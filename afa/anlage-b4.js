@@ -1,0 +1,123 @@
+// Block 4: Wasserstoff-Elektrolyse im Kleinformat (frei erfunden, im Stil der Prüfungsanlage). Fließbild mit Regelkreisen, Behälterzeichnung mit drei Ansichten, Fragen.
+(function () {
+  window.ANLAGE_B4 = {
+    title: "Block 4 · Elektrolyse-Anlage", level: "Prüfungsniveau",
+    desc: "Eine kleine Wasserstoff-Elektrolyse. Das Fließbild hat drei Regelkreise, zwei Gasleitungen, einen Kreislauf mit Pumpe und Kühler und den Elektrolytsammler BE01. Die Behälterzeichnung hat drei Ansichten.",
+    text: "In der Anlage wird mit dem Elektrolyseur SB01 aus Wasser Wasserstoff (H₂) und Sauerstoff (O₂) hergestellt. Der Elektrolyt (wässrige Kalilauge) wird mit der Pumpe PL01 aus dem Elektrolytsammler BE01 über den Kühler WT01 in den Elektrolyseur gefördert. Die Gase gelangen mit dem Elektrolyt in die Separatoren SB02 (H₂) und SB03 (O₂). Dort werden sie vom Elektrolyt getrennt, der Elektrolyt fließt zurück in BE01. Verbrauchtes Wasser wird über die Regelarmatur VC01 als VE-Wasser nachgespeist (Füllstandsregelung LIC 01). Der Druck der H₂-Leitung wird mit PIC 02 über VC02 geregelt. Die Temperatur des Elektrolyten hinter dem Kühler regelt TIC 04 über VC03 (Kühlwasser). Beide Gasseiten hängen am gemeinsamen Elektrolytkreislauf, deshalb sind sie druckgleich. Gegen Überdruck sind beide Gasleitungen mit je einem Sicherheitsventil (SV01, SV02) abgesichert.",
+    kenn: [
+      ["Elektrolyseur SB01", "Elektrische Leistung P = 520 kW", "Energiebedarf: 52 kWh je kg H₂", "Wasserbedarf: 9 L je kg H₂"],
+      ["Elektrolyt", "Massenstrom (Masse pro Stunde) ṁ = 2200 kg/h", "spez. Wärmekapazität c = 0,92 Wh/(kg · K)", "Abkühlung im Kühler ΔT = 8 K"],
+      ["Behälter BE01", "Nennvolumen V = 650 L", "Füllvolumen V<sub>F</sub> = 520 L", "Masse leer m = 250 kg, Dichte Elektrolyt ρ = 1,25 kg/dm³"],
+      ["Betrieb", "Betriebsdruck H₂-Seite 25 bar", "Werkstoff der Rohre: 1.4571", "Schutzart Pumpenmotor IP55"]
+    ],
+    ri: {
+      W: 920, H: 600, alt: "Fließbild einer Elektrolyse-Anlage mit Elektrolyseur, zwei Separatoren, Elektrolytsammler, Pumpe, Kühler und drei Regelkreisen",
+      pipes: [
+        { pts: [[340, 100], [340, 70], [128, 70]], tag: "LP05 DN 25", tp: [348, 62] },
+        { pts: [[600, 100], [600, 70], [830, 70]], tag: "LP06 DN 25", tp: [610, 62] },
+        { pts: [[720, 70], [720, 52]] }, { pts: [[400, 70], [400, 52]] },
+        { pts: [[440, 265], [440, 235], [340, 235], [340, 200]], tag: "LP03 DN 50", tp: [348, 228] },
+        { pts: [[500, 265], [500, 235], [600, 235], [600, 200]], tag: "LP04 DN 50", tp: [545, 228] },
+        { pts: [[312, 180], [250, 180], [250, 430], [185, 430], [185, 445]], tag: "LP07 DN 50", tp: [256, 300] },
+        { pts: [[628, 180], [700, 180], [700, 560], [130, 560], [130, 495]], tag: "LP08 DN 50", tp: [706, 300] },
+        { pts: [[32, 380], [100, 380], [100, 445]], tag: "LP01 DN 25", tp: [58, 372] },
+        { pts: [[195, 470], [375, 470]], tag: "LP02 DN 40", tp: [200, 462] },
+        { pts: [[445, 470], [470, 470], [470, 335]] },
+        { pts: [[295, 410], [420, 410], [420, 457]], tag: "LP09 DN 32", tp: [358, 398] },
+        { pts: [[395, 483], [395, 520]] },
+        { sig: true, pts: [[152, 412], [131, 412]] },
+        { sig: true, pts: [[257, 40], [230, 40], [230, 50]] },
+        { sig: true, pts: [[510, 387], [510, 370], [340, 370], [340, 381]] }
+      ],
+      dots: [],
+      sym: [
+        { t: "vessel", x: 340, y: 150, w: 56, h: 100, tag: "SB02" }, { t: "vessel", x: 600, y: 150, w: 56, h: 100, tag: "SB03" },
+        { t: "box", x: 470, y: 300, w: 120, h: 70, tag: "SB01", sub: "Elektrolyseur" },
+        { t: "vessel", x: 130, y: 470, w: 130, h: 50, tag: "BE01", sub: "Elektrolytsammler" },
+        { t: "ext", x: 110, y: 70, dir: "l", tag: "Wasserstoff (H₂)", ty: 52, tx: 84 }, { t: "ext", x: 848, y: 70, dir: "r", tag: "Sauerstoff (O₂)", ty: 52, tx: 826 },
+        { t: "check", x: 168, y: 70, dir: "l", tag: "VH01", ty: 94 }, { t: "regel", x: 228, y: 70, tag: "VC02", ty: 94, tx: 214 },
+        { t: "pce", x: 270, y: 44, fn: "PIC", nr: "02", src: [270, 70] }, { t: "safety", x: 400, y: 42, tag: "SV02" },
+        { t: "safety", x: 720, y: 42, tag: "SV01" }, { t: "pce", x: 660, y: 112, fn: "PI", nr: "03", src: [628, 130], al: "AH" },
+        { t: "ext", x: 20, y: 380, dir: "r", tag: "VE-Wasser", ty: 358, tx: 8, ta: "start" }, { t: "valve", x: 62, y: 380, tag: "VV01", ty: 402 }, { t: "regel", x: 100, y: 412, o: "v", tag: "VC01" },
+        { t: "pce", x: 165, y: 412, fn: "LIC", nr: "01", src: [165, 445] },
+        { t: "valve", x: 222, y: 470, tag: "VV02" }, { t: "pump", x: 280, y: 470, tag: "PL01", dir: "r" }, { t: "check", x: 335, y: 470, dir: "r", tag: "VH02", ty: 494 },
+        { t: "hx", x: 410, y: 470, w: 70, h: 26, tag: "WT01" },
+        { t: "ext", x: 280, y: 410, dir: "r", tag: "Kühlwasser ein", ty: 390, tx: 268 }, { t: "regel", x: 340, y: 410, tag: "VC03", ty: 440, tx: 326 },
+        { t: "ext", x: 395, y: 533, dir: "d", tag: "Kühlwasser aus", ty: 554, tx: 415, ta: "start" },
+        { t: "pce", x: 510, y: 400, fn: "TIC", nr: "04", src: [470, 400] },
+        { t: "arrow", x: 140, y: 420, dir: "d" }, { t: "arrow", x: 340, y: 86, dir: "u" }, { t: "arrow", x: 600, y: 86, dir: "u" }, { t: "arrow", x: 470, y: 440, dir: "u" },
+        { t: "arrow", x: 250, y: 330, dir: "d" }, { t: "arrow", x: 700, y: 360, dir: "d" }, { t: "arrow", x: 250, y: 470, dir: "r" }, { t: "arrow", x: 440, y: 250, dir: "u" }
+      ]
+    },
+    legend: ["be", "sb", "pumpe", "vv", "vh", "vc", "sv", "wt", "pce", "sig", "arrow", "ext"],
+    pipes: [["LP01", "VE-Wasser"], ["LP02, LP07, LP08", "Elektrolyt (Kalilauge)"], ["LP03", "Elektrolyt + Wasserstoff"], ["LP04", "Elektrolyt + Sauerstoff"], ["LP05", "Wasserstoff (H₂)"], ["LP06", "Sauerstoff (O₂)"], ["LP09", "Kühlwasser"]],
+    vessel: {
+      alt: "Zeichnung des Elektrolytsammlers BE01 mit Vorderansicht, Draufsicht und Ansicht von links", D: 700, L: 1500, hh: 175, scale: 0.19, hs: 250, sw: 260, views: ["front", "top", "side"],
+      saddles: [450, 1350],
+      nozzles: [{ id: "A", x: 350, ang: 340, dn: 25, len: 170 }, { id: "B", x: 750, ang: 40, dn: 50, len: 170 }, { id: "C", x: 1250, ang: 90, dn: 50, len: 160 }, { id: "D", x: 900, ang: 180, dn: 40, len: 150 }, { id: "E", x: 1000, ang: 270, dn: 25, len: 130 }, { id: "F", x: 1250, ang: 0, dn: 400, len: 110 }],
+      dims: [{ k: "h", a: 0, b: 1850, off: 100, ea: -30, eb: -30, text: "1850" }, { k: "hb", a: 450, b: 1350, off: 28, text: "900" }, { k: "hb", a: 1350, b: 1850, off: 62, text: "500" }, { k: "v", a: 0, b: 700, off: 46, text: "Ø 700" }],
+      callouts: [{ v: "front", n: "1", x: 800, y: 330, dx: 40, dy: -50 }, { v: "front", n: "2", x: 1840, y: 350, dx: 22, dy: -60 }, { v: "front", n: "3", x: 450, y: 800, dx: -34, dy: 26 }]
+    },
+    nozzles: [{ id: "A", fn: "VE-Wasser Zulauf", dn: 25, pn: 40 }, { id: "B", fn: "Rücklauf SB02", dn: 50, pn: 40 }, { id: "C", fn: "Rücklauf SB03", dn: 50, pn: 40 }, { id: "D", fn: "Ablauf zur Pumpe", dn: 40, pn: 40 }, { id: "E", fn: "Füllstandsmessung", dn: 25, pn: 40 }, { id: "F", fn: "Mannloch", dn: 400, pn: 25 }],
+    parts: [
+      [1, 1, "Mantel", "Ø 700 × 5 – 1500", "1.4571"], [2, 2, "Boden", "DIN 28013, Ø 700", "1.4571"], [3, 2, "Sattel", "Breite 260", "S235JR"],
+      [4, 1, "Mannloch F", "DN 400, PN 25", "1.4571"], [5, 1, "Stutzen A", "Rohr 33,7 × 2,6 – 170", "1.4571"], [6, 1, "Stutzen B", "Rohr 60,3 × 2,9 – 170", "1.4571"],
+      [7, 1, "Stutzen C", "Rohr 60,3 × 2,9 – 160", "1.4571"], [8, 1, "Stutzen D", "Rohr 48,3 × 2,6 – 150", "1.4571"], [9, 1, "Stutzen E", "Rohr 33,7 × 2,6 – 130", "1.4571"],
+      [10, 2, "Vorschweißflansch", "EN 1092-1, DN 25, PN 40", "1.4571"], [11, 2, "Vorschweißflansch", "EN 1092-1, DN 50, PN 40", "1.4571"], [12, 1, "Vorschweißflansch", "EN 1092-1, DN 40, PN 40", "1.4571"],
+      [13, 2, "Gummiauflage", "betriebsüblich", "EPDM"], [14, 1, "Typenschild", "Blech 100 × 60", "1.4301"]
+    ],
+    questions() {
+      const { Q, QN } = window.QH, T = "Block 4";
+      return [
+        Q(T, "Wie viele Regelarmaturen (VC) hat das Fließbild?",
+          "3", ["1", "2", "4", "5"],
+          "VC01 (Wassernachspeisung), VC02 (H₂-Druck) und VC03 (Kühlwasser) sind Regelarmaturen. Du erkennst sie am Stellantrieb (Halbkreis) über dem Ventil."),
+        Q(T, "Die PCE-Stelle LIC 01 sitzt am Behälter BE01. Welche Armatur stellt sie über die gestrichelte Signalleitung?",
+          "Die Regelarmatur VC01 in der VE-Wasserleitung", ["VC02 in der Wasserstoffleitung", "VC03 in der Kühlwasserleitung", "Den Rückflussverhinderer VH01", "Die Pumpe PL01"],
+          "L = Füllstand, I = Anzeige, C = Regelung. Sinkt der Füllstand in BE01, öffnet VC01 und lässt VE-Wasser nachströmen. Die Signalleitung zeigt den Zusammenhang."),
+        Q(T, "Wie regelt die Anlage den Druck in der Wasserstoffleitung LP05?",
+          "PIC 02 stellt die Regelarmatur VC02", ["PI 03 stellt VC02", "TIC 04 stellt VC02", "LIC 01 stellt VC02", "VH01 regelt den Druck"],
+          "PIC 02 misst den Druck in LP05 und gibt das Signal an die Regelarmatur VC02 in derselben Leitung. PI 03 gehört zur Sauerstoffseite und zeigt nur an."),
+        Q(T, "Welche Aufgabe hat TIC 04?",
+          "Er regelt die Temperatur des Elektrolyten hinter dem Kühler über VC03", ["Er regelt den Füllstand in BE01", "Er regelt den Druck der H₂-Leitung", "Er zeigt den Durchfluss an", "Er überwacht nur die Temperatur ohne einzugreifen"],
+          "T = Temperatur, I = Anzeige, C = Regelung. Über die Signalleitung stellt TIC 04 die Regelarmatur VC03, die den Kühlwasserzulauf des Kühlers WT01 steuert."),
+        Q(T, "Welches Medium führt die Leitung LP03?",
+          "Elektrolyt zusammen mit Wasserstoff", ["Reinen Wasserstoff", "Elektrolyt zusammen mit Sauerstoff", "VE-Wasser", "Kühlwasser"],
+          "LP03 verbindet den Elektrolyseur mit dem H₂-Separator SB02. Sie führt Elektrolyt mit Wasserstoff. LP04 führt Elektrolyt mit Sauerstoff zu SB03."),
+        Q(T, "In welcher Reihenfolge durchströmt der Elektrolyt den Kreislauf, ausgehend vom Sammler BE01?",
+          "BE01 → Pumpe PL01 → Kühler WT01 → Elektrolyseur SB01 → Separatoren → zurück zu BE01", ["BE01 → Elektrolyseur → Pumpe → Kühler → Separatoren", "BE01 → Kühler → Pumpe → Separatoren → Elektrolyseur", "Elektrolyseur → BE01 → Separatoren → Pumpe", "Separatoren → Kühler → Pumpe → BE01"],
+          "Die Pfeile im Fließbild zeigen: Aus BE01 saugt die Pumpe PL01, der Elektrolyt wird im Kühler abgekühlt und strömt dann in den Elektrolyseur. Mit den Gasen geht es in die Separatoren, aus denen der Elektrolyt zurück nach BE01 fließt."),
+        Q(T, "Was bedeutet AH bei der PCE-Stelle PI 03?",
+          "Alarm bei zu hohem Druck", ["Anzeige hoch", "Alarm bei zu niedrigem Druck", "Automatisch Heizen", "Abschaltung Hand"],
+          "PI = Druck anzeigen. AH = Alarm bei zu hohem Wert (High). AL wäre der Alarm bei zu niedrigem Wert."),
+        Q(T, "Welche Armatur ist VH01 in der Wasserstoffleitung LP05?",
+          "Ein Rückflussverhinderer", ["Ein Absperrventil", "Eine Regelarmatur", "Ein Sicherheitsventil", "Ein Filter"],
+          "VH = Sicherungsarmatur. Der Rückflussverhinderer sorgt dafür, dass kein Gas aus dem Sammelnetz in die Anlage zurückströmt. Er lässt nur in Pfeilrichtung durch."),
+        QN(T, "Wie viele Stutzen sind laut Stutzentabelle am Behälter BE01 vorhanden (mit Mannloch)?", 6, [1, 2, 3], String,
+          "Die Tabelle nennt A, B, C, D, E und F. Das Mannloch F zählt mit."),
+        Q(T, "Welcher Stutzen führt zur Pumpe PL01?",
+          "Stutzen D (Ablauf zur Pumpe, DN 40)", ["Stutzen A", "Stutzen B", "Stutzen C", "Stutzen E"],
+          "In der Stutzentabelle steht bei D „Ablauf zur Pumpe“. D sitzt unten am Behälter, so läuft der Elektrolyt zur Pumpe PL01. A ist der VE-Wasser-Zulauf, B und C sind die Rückläufe aus den Separatoren, E misst den Füllstand."),
+        Q(T, "Auf welcher Seite des Behälters sitzt der Stutzen E (Füllstandsmessung)? In der Vorderansicht ist er gestrichelt, in der Draufsicht oben als Rechteck gezeichnet.",
+          "Hinten", ["Vorn", "Oben", "Unten", "Genau in der Mitte"],
+          "Gestrichelte Linien sind verdeckte Kanten: Der Stutzen liegt auf der Rückseite, in der Vorderansicht ist er verdeckt. In der Draufsicht (unter der Vorderansicht) zeigen Teile, die oben im Bild liegen, nach hinten."),
+        Q(T, "Wie weit ist der rechte Sattel vom rechten Behälterende entfernt?",
+          "500 mm", ["900 mm", "1350 mm", "1850 mm", "250 mm"],
+          "Die Maßkette unter dem Behälter nennt 900 mm (Abstand der Sättel) und 500 mm (rechter Sattel bis zum Ende). 1850 mm ist die Gesamtlänge, 1350 mm der Abstand des rechten Sattels vom linken Ende."),
+        Q(T, "Wie viele Vorschweißflansche mit DN 50 enthält die Stückliste?",
+          "2", ["1", "3", "4", "6"],
+          "Pos. 11: Vorschweißflansch DN 50, Stückzahl 2 (für die Stutzen B und C). DN 25 sind ebenfalls zwei Flansche (Stutzen A und E), DN 40 ist einer."),
+        QN(T, "Wie viel Wasserstoff erzeugt der Elektrolyseur pro Stunde (520 kW, Energiebedarf 52 kWh je kg H₂)?", 10, [1, 2, 4], n => n + " kg/h",
+          "In einer Stunde nimmt die Anlage 520 kWh auf. Menge = 520 kWh : 52 kWh/kg = 10 kg."),
+        QN(T, "Wie viel VE-Wasser verbraucht die Anlage dabei pro Stunde (Wasserbedarf 9 L je kg H₂)?", 90, [10, 20, 40], n => n + " L/h",
+          "10 kg/h · 9 L/kg = 90 L/h."),
+        QN(T, "Welche Wärmeleistung muss der Kühler WT01 abführen (Massenstrom 2200 kg/h, c = 0,92 Wh/(kg · K), ΔT = 8 K)? Hinweis: 1 Wh pro Stunde = 1 W.", 16.2, [2, 4, 8], n => String(n).replace(".", ",") + " kW",
+          "Leistung = Massenstrom · c · Temperaturunterschied = 2200 kg/h · 0,92 Wh/(kg · K) · 8 K = 16 192 Wh/h = 16 192 W ≈ 16,2 kW. Durch 1000 teilen ergibt kW."),
+        QN(T, "Wie groß ist die Gesamtmasse des gefüllten Behälters BE01 (Masse leer 250 kg, Füllung 520 L, ρ = 1,25 kg/dm³)?", 900, [50, 250, 650], n => n + " kg",
+          "Elektrolyt: 1,25 kg/dm³ · 520 dm³ = 650 kg. Dazu der leere Behälter: 250 kg + 650 kg = 900 kg."),
+        QN(T, "Wie viele Sicherheitsventile hat das Fließbild?", 2, [1, 2, 3], String,
+          "SV01 sichert die Sauerstoffleitung LP06, SV02 die Wasserstoffleitung LP05. Das Zickzack-Symbol steht für die Feder, die das Ventil bei Überdruck öffnen lässt.")
+      ];
+    }
+  };
+})();
