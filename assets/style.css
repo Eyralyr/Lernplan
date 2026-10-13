@@ -74,3 +74,17 @@ select{min-height:44px}
 .qgrid{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
 .qgrid .chip{min-width:44px;padding:6px 10px;text-align:center}
 .chip.cur{box-shadow:0 0 0 2px var(--accent)}
+/* Isometrie-Schemata */
+svg.iso .halo{stroke:var(--card);stroke-width:13;fill:none;stroke-linecap:butt}
+svg.iso .halo2{fill:var(--card);stroke:none}
+svg.iso .sym{stroke:var(--text);stroke-width:2;fill:none;stroke-linejoin:round}
+svg.iso .symf{fill:var(--text);stroke:var(--text);stroke-width:1}
+svg.iso .dim{stroke:var(--text);stroke-width:1;fill:none}
+svg.iso .dashdot{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:10 3 2 3;fill:none}
+svg.iso .hatch{stroke:var(--muted);stroke-width:1}
+svg.iso .auxp{fill:none;stroke:var(--muted);stroke-width:1.2}
+svg.iso text.t1{fill:var(--text);font:600 12.5px "Atkinson Hyperlegible Next",system-ui,sans-serif}
+svg.iso text.pos{fill:var(--text);font:700 12px "Atkinson Hyperlegible Next",system-ui,sans-serif}
+svg.iso .poscirc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+.isoscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.fab{position:fixed;right:12px;bottom:12px;z-index:30;min-height:44px;border-radius:99px;border:1.5px solid var(--accent);background:var(--card);color:var(--accent);font:inherit;font-weight:700;padding:8px 16px;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer}

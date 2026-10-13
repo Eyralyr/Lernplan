@@ -1,7 +1,7 @@
 // Trainer für Auswahlfragen (wie Teil A der IHK-Prüfung: 5 Antworten, genau eine ist richtig).
 // Fragen kommen aus window.FRAGEN: {t: Thema, q: Frage, o: [richtige Antwort, 4 falsche], why: Erklärung}
 // Optional: window.MC_KEY (eigener Speicherplatz je Seite), window.MC_SCROLL (Element-ID, zu dem nach oben gescrollt wird)
-(function () {
+window.MCInit = function () {
   const $ = id => document.getElementById(id);
   const ALL = window.FRAGEN;
   const TOPICS = [...new Set(ALL.map(f => f.t))];
@@ -224,13 +224,16 @@
     html += (mode === "ueben" ? '<button class="btn" id="more">Noch ' + RUNDE + " Fragen</button>" : "") +
       (wrong.length ? '<button class="btn ghost" id="again-wrong">Nur die falschen nochmal</button>' : "") +
       (mode === "pruefung" ? '<button class="btn ghost" id="to-review">← Zurück zu den Fragen</button>' : "") +
+      (window.MC_NEXT ? '<button class="btn" id="next-set">' + (window.MC_NEXT_LABEL || "Weiter") + '</button>' : "") +
       '<button class="btn ghost" id="done">Fertig für heute</button>';
     $("card").innerHTML = html;
     if ($("more")) $("more").onclick = () => start("ueben", nextRound(ALL));
     if (wrong.length) $("again-wrong").onclick = () => start("ueben", shuffle(wrong.map(l => l.f)));
     if ($("to-review")) $("to-review").onclick = () => review(true);
     $("done").onclick = home;
+    if ($("next-set")) $("next-set").onclick = () => window.MC_NEXT();
   }
 
   home();
-})();
+};
+if (!window.MC_MANUAL) window.MCInit();
