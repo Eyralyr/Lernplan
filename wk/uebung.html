@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wirtschaftskunde üben</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  ul.merk{padding-left:20px;margin:6px 0}
+  ul.merk li{margin:5px 0}
+  .lvlhelp{color:var(--text);font-size:1rem;margin:6px 0 0}
+  .total{margin:12px 0 0}
+  table.m{border-collapse:collapse;font-size:.92rem;margin:6px 0}
+  table.m th,table.m td{border:1px solid var(--line);padding:4px 8px;text-align:left}
+</style>
+</head>
+<body>
+<main>
+  <p class="sub"><a href="../index.html">← Zur Übersicht</a></p>
+  <h1>Wirtschaftskunde (WK) üben</h1>
+  <p class="sub">WK heißt Wirtschaftskunde. In der Prüfung heißt das Fach Wirtschafts- und Sozialkunde (WiSo). Bei jeder Frage stimmt genau eine Antwort. Die Beträge in den Rechenaufgaben sind erfundene Beispiele. In deiner Prüfung können Zahlen und Texte anders sein.</p>
+
+  <div class="given total" id="total"></div>
+
+  <p class="sec"><b>1 · Thema</b></p>
+  <div class="chips" id="pickT"></div>
+  <p class="sec" style="margin-top:14px"><b>2 · Stufe</b> <small class="badge">(die Zahl ist die Anzahl der Fragen, ✓ = alle schon einmal richtig)</small></p>
+  <div class="chips" id="pickS"></div>
+  <p class="lvlhelp" id="lvlhelp"></p>
+
+  <details id="merkbox" style="margin-top:14px"><summary>Erst nachlesen: das Wichtigste in Kürze</summary><ul class="merk" id="merk"></ul></details>
+
+  <div class="meta" id="meta" style="display:none;margin-top:16px"><span id="count"></span><span id="topic"></span></div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="card" id="card"></div>
+</main>
+
+<script>window.MC_MANUAL = true; window.MC_SCROLL = "meta";</script>
+<script src="data-wirtschaft.js"></script>
+<script src="data-steuern.js"></script>
+<script src="data-lohn.js"></script>
+<script src="data-rechtsformen.js"></script>
+<script src="data-tarif.js"></script>
+<script src="data-arbeitsrecht.js"></script>
+<script src="data-vertraege.js"></script>
+<script src="../assets/backup.js"></script>
+<script src="../assets/mc.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const D = window.WK_DATA || {};
+  const ORDER = ["wirtschaft", "steuern", "lohn", "rechtsformen", "tarif", "arbeitsrecht", "vertraege"].filter(k => D[k]);
+  const STUFEN = [
+    { s: 1, name: "Einstieg", help: "Einstieg: Begriffe und Grundwissen. Hier startest du." },
+    { s: 2, name: "Mittel", help: "Mittel: Zusammenhänge verstehen und einfach anwenden." },
+    { s: 3, name: "Anspruchsvoll", help: "Anspruchsvoll: kleine Fälle und Rechnungen mit mehreren Schritten." },
+    { s: 4, name: "Prüfungsniveau", help: "Prüfungsniveau: lange Aufgaben wie in der Prüfung. Die Antworten klingen fast gleich, lies genau." },
+    { s: 0, name: "Alle Stufen", help: "Alle Stufen: alle Aufgaben des Themas gemischt." }
+  ];
+  const all = () => ORDER.flatMap(k => D[k].fragen);
+  const THEMEN = ORDER.map(k => ({ k, name: D[k].title })).concat([{ k: "mix", name: "Alle Themen gemischt" }]);
+  let curT = ORDER[0], curS = 1;
+
+  const hash = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return String(h); };
+  const keyOf = (k, s) => "kai-wk-" + k + "-" + (s || "alle");
+  const stats = (k, s) => { try { return JSON.parse(localStorage.getItem(keyOf(k, s) + "-q")) || {}; } catch (e) { return {}; } };
+  function pool(k, s) {
+    const base = k === "mix" ? all() : D[k].fragen;
+    return s ? base.filter(f => f.s === s) : base;
+  }
+  function done(k, s) {
+    const p = pool(k, s); if (!p.length) return false;
+    const st = stats(k, s);
+    return p.every(f => { const e = st[hash(f.q)]; return e && e[2] === "r"; });
+  }
+  function totalSeen() {
+    const seen = new Set();
+    THEMEN.forEach(t => STUFEN.forEach(x => {
+      const st = stats(t.k, x.s);
+      Object.keys(st).forEach(h => seen.add(h));
+    }));
+    return seen.size;
+  }
+  function render() {
+    const N = all().length, seen = Math.min(totalSeen(), N);
+    $("total").innerHTML = "<b>Insgesamt " + seen + " von " + N + " Fragen schon geübt</b>" + '<div class="bar" style="margin:6px 0 0"><i style="width:' + Math.round(seen / N * 100) + '%"></i></div>';
+    $("pickT").innerHTML = THEMEN.map(t => '<button class="chip' + (t.k === curT ? " on" : "") + '" data-k="' + t.k + '">' + t.name + "</button>").join("");
+    $("pickS").innerHTML = STUFEN.map(x => '<button class="chip' + (x.s === curS ? " on" : "") + '" data-s="' + x.s + '">' + x.name + " (" + pool(curT, x.s).length + ")" + (done(curT, x.s) ? " ✓" : "") + "</button>").join("");
+    $("lvlhelp").textContent = STUFEN.filter(x => x.s === curS)[0].help;
+    const m = curT === "mix" ? [] : D[curT].merk || [];
+    $("merk").innerHTML = m.map(x => "<li>" + x + "</li>").join("");
+    $("merkbox").style.display = m.length ? "" : "none";
+    document.querySelectorAll("#pickT .chip").forEach(c => c.onclick = () => { curT = c.dataset.k; if (curT === "mix") curS = 0; else if (curS === 0) curS = 1; render(); });
+    document.querySelectorAll("#pickS .chip").forEach(c => c.onclick = () => { curS = +c.dataset.s; render(); });
+    window.FRAGEN = pool(curT, curS);
+    window.MC_KEY = keyOf(curT, curS);
+    window.MC_SIM_N = curT === "mix" ? 18 : 12;
+    window.MC_SIM_TEXT = curT === "mix"
+      ? "In der echten WiSo-Prüfung hast du höchstens 60 Minuten. Hier übst du nur das Ankreuzen."
+      : "Hier übst du das Ankreuzen am Stück, so wie in der Prüfung.";
+    try { history.replaceState(null, "", "#" + curT + "/" + curS); } catch (e) {}
+    if (window.FRAGEN.length) window.MCInit(); else { $("card").innerHTML = "<p>Für diese Auswahl gibt es noch keine Fragen.</p>"; $("meta").style.display = "none"; }
+  }
+  const h = (location.hash || "").slice(1).split("/");
+  if (THEMEN.some(t => t.k === h[0])) curT = h[0];
+  if (STUFEN.some(x => String(x.s) === h[1])) curS = +h[1];
+  else if (curT === "mix") curS = 0;
+  render();
+})();
+</script>
+</body>
+</html>

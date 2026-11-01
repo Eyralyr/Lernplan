@@ -6,7 +6,7 @@ window.MCInit = function () {
   const ALL = window.FRAGEN;
   const TOPICS = [...new Set(ALL.map(f => f.t))];
   const KEY = window.MC_KEY || "afa";
-  const PRUEFUNG_N = Math.min(28, ALL.length);
+  const PRUEFUNG_N = Math.min(window.MC_SIM_N || 28, ALL.length);
   const RUNDE = 10;
   let sel = new Set(TOPICS), recorded = false;
   // Zustand der laufenden Runde
@@ -64,7 +64,7 @@ window.MCInit = function () {
       '<p class="hint"><button class="chip" id="all">Alle</button> <button class="chip" id="none">Keine</button></p>' +
       '<button class="btn" id="go-themen">Mit diesen Themen üben</button></details>' +
       "<details><summary>Prüfungs-Simulation (" + PRUEFUNG_N + " Fragen)</summary>" +
-      "<p>Hier gibt es keine Note, du übst nur. Das Ergebnis kommt erst am Ende, so wie in der Prüfung. Du kannst Fragen überspringen, zurückgehen und offene Fragen später beantworten. In der echten Prüfung hast du 105 Minuten für Teil A und Teil B zusammen. Für Teil A kannst du etwa 45 Minuten rechnen.</p>" +
+      "<p>Hier gibt es keine Note, du übst nur. Das Ergebnis kommt erst am Ende, so wie in der Prüfung. Du kannst Fragen überspringen, zurückgehen und offene Fragen später beantworten. " + (window.MC_SIM_TEXT || "In der echten Prüfung hast du 105 Minuten für Teil A und Teil B zusammen. Für Teil A kannst du etwa 45 Minuten rechnen.") + "</p>" +
       '<button class="btn ghost" id="go-pruef">Simulation starten</button></details>' +
       '<details><summary>Sicherung</summary><div id="bk"></div></details>';
     if (window.KaiBackup) window.KaiBackup.mount($("bk")); else $("bk").textContent = "Sicherung nicht verfügbar.";

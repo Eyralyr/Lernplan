@@ -6,7 +6,7 @@
   const DECK = "kai-lernplan";
   const KEY_OK = /^(afa|anlage|kai)-[a-z0-9-]+$/;
   const META = "kai-meta";                 // { lastBackup: "YYYY-MM-DD" }
-  const MAX_TEXT = 300000, MAX_KEYS = 60, MAX_VALUE = 100000;
+  const MAX_TEXT = 300000, MAX_KEYS = 250, MAX_VALUE = 100000;
 
   const pad = n => String(n).padStart(2, "0");
   const today = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
